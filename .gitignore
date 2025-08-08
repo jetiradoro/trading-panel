@@ -1,0 +1,6 @@
+# Node modules (en cualquier parte del proyecto)
+**/node_modules/
+**/.env
+.idea
+.vscode
+.DS_Store

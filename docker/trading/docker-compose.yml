@@ -1,0 +1,45 @@
+services:
+  api:
+    build: .
+    image: nest-quasar-stack:latest
+    container_name: trading-api
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      - TZ=Europe/Madrid
+      - VIRTUAL_HOST=${API_HOST}
+      - VIRTUAL_PORT=${API_PORT}
+    user: "1000:1000"
+    networks:
+      - docker-net
+    working_dir: /app
+    volumes:
+      - ../../api:/app
+      - ./api/init_container.sh:/scripts/init_container.sh
+    command: bash /scripts/init_container.sh
+  app:
+    build: .
+    image: nest-quasar-stack:latest
+    container_name: trading-app
+    depends_on:
+      - api
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      - TZ=Europe/Madrid
+      - VIRTUAL_HOST=${APP_HOST}
+      - VIRTUAL_PORT=${APP_PORT}
+    user: "1000:1000"
+    networks:
+      - docker-net
+    working_dir: /app
+    volumes:
+      - ../../app:/app
+      - ./app/init_container.sh:/scripts/init_container.sh
+    command: bash /scripts/init_container.sh
+  
+networks:
+  docker-net:
+    external: ${NET_EXTERNAL}
