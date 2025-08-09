@@ -20,10 +20,11 @@ Desarrollada en node con el framework [Nest JS](https://docs.nestjs.com/)
 
 1. Clonar el proyecto del repositorio
 2. Copiar el archivo **docker/trading/.env.example** a **docker/trading/.env** y rellenar con los datos de tu entorno
-3. Levantar proyecto
+3. Copiar el archivo **api/.env.example** a **api/.env** y rellenar con los datos de tu entorno
+4. Levantar proyecto
 
 ```bash
 docker compose -f docker/trading/docker-composeocal.yml up -d
 ```
 
-4. Probar ruta raíz para ver si la api responde correctamente
+5. Probar ruta raíz para ver si la api responde correctamente
