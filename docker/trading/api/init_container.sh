@@ -13,6 +13,8 @@ if [ ! -d "/app/node_modules" ]; then
     npm install
 fi
 
+npx prisma generate
+
 if [ "$DOCKER_ENVIRONMENT" = "dev" ]; then
     npm run start:dev
 else

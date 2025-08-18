@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "./lib"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -18,8 +17,10 @@ datasource db {
 model users {
   id        String   @id @default(cuid())
   email     String   @unique
-  name      String?
+  name      String
   password  String
+  refresh_token String?
+  token_expiration DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

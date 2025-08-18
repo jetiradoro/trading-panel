@@ -5,6 +5,9 @@ import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { LogsMiddleware } from './logs/logs.middleware';
 import { ConfigModule } from '@nestjs/config';
 import config from './config';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -13,6 +16,9 @@ import config from './config';
       envFilePath: '../.env',
       load: [config],
     }),
+    AuthModule,
+    UsersModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
