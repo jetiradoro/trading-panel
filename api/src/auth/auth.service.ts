@@ -57,6 +57,8 @@ export class AuthService {
       token_expiration: expires_in.toDate(),
     });
     return {
+      name: user.name,
+      email: user.email,
       access_token: token,
       refresh_token: refreshToken,
       expires_in: expires_in.unix(),
