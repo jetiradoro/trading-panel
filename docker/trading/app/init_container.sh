@@ -14,7 +14,7 @@ if [ ! -d "/app/node_modules" ]; then
 fi
 
 if [ "$DOCKER_ENVIRONMENT" = "dev" ]; then
-    quasar dev -p 80
+    quasar dev -m pwa -p 80
 else
     quasar build -m pwa
     quasar serve -p 443 /app/dist/pwa
