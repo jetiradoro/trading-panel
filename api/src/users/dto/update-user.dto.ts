@@ -3,7 +3,9 @@ import { CreateUserDto } from './create-user.dto';
 import { Injectable } from '@nestjs/common';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
-  email: string;
-  name: string;
+  email?: string;
+  name?: string;
   password?: string;
+  refresh_token?: string;
+  token_expiration?: Date;
 }

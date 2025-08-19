@@ -3,7 +3,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto } from './dto/user.dto';
-import { PasswordHelper } from 'src/common/helpers/password.helper';
+import { PasswordHelper } from '../common/helpers/password.helper';
+import { users } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -56,6 +57,12 @@ export class UsersService {
     });
   }
 
+  findBy(filter): Promise<users | null> {
+    return this.prisma.users.findUnique({
+      where: filter,
+    });
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.prisma.users.findUnique({
       where: { id },
@@ -75,6 +82,8 @@ export class UsersService {
     const data = {
       email: updateUserDto.email ?? user.email,
       name: updateUserDto.name ?? user.name,
+      refresh_token: updateUserDto.refresh_token ?? user.refresh_token,
+      token_expiration: updateUserDto.token_expiration ?? user.token_expiration,
     };
     if (updateUserDto.password) {
       data['password'] = PasswordHelper.hashPassword(updateUserDto.password);

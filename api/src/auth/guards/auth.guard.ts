@@ -8,27 +8,34 @@ import {
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { UsersService } from '../../users/users.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwt: JwtService,
     private config: ConfigService,
+    private users: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+
     if (!token) {
       throw new UnauthorizedException('Missing Bearer token');
     }
 
     try {
       const payload = this.jwt.verify(token);
-      if (payload.sub !== this.config.get('app.jwt.subscribe')) {
-        throw new UnauthorizedException('Invalid subject');
+
+      const user_id = payload.sub;
+      const user = await this.users.findOne(user_id);
+      if (!user) {
+        throw new UnauthorizedException('Invalid Subject in JWT token');
       }
-      request.appClient = payload.sub;
+
+      request.appClient = user;
       return true;
     } catch (e) {
       if (this.config.get('app.env') === 'dev') {

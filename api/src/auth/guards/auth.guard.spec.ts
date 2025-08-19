@@ -3,16 +3,22 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import configObject from '../../config';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
+import { UsersService } from '../../users/users.service';
 
 describe('AuthGuard', () => {
   let jwtService: JwtService;
   let configService: ConfigService;
+  let prismaService: PrismaService;
+  let usersService: UsersService;
   const config = configObject();
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JwtService,
         ConfigService,
+        PrismaService,
+        UsersService,
         {
           provide: 'JWT_MODULE_OPTIONS',
           useValue: {
@@ -25,10 +31,14 @@ describe('AuthGuard', () => {
 
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get(ConfigService);
+    prismaService = module.get<PrismaService>(PrismaService);
+    usersService = module.get<UsersService>(UsersService);
   });
 
   it('should be defined', () => {
-    expect(new AuthGuard(jwtService, configService)).toBeDefined();
+    expect(
+      new AuthGuard(jwtService, configService, usersService),
+    ).toBeDefined();
   });
 
   it('jwt example generator', () => {
@@ -45,7 +55,7 @@ describe('AuthGuard', () => {
 
     const token = jwtService.sign(payload);
 
-    console.log('Generated token:', token);
+    // console.log('Generated token:', token);
 
     // Verificar que se puede decodificar y que exp es correcto
     const decoded = jwtService.verify(token, {
