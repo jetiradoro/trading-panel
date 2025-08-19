@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { api } from 'boot/axios';
-
+const STORAGE_KEY = 'auth_trading_session';
 interface User {
   access_token: string;
   refresh_token: string;
@@ -23,6 +23,17 @@ export const useUserStore = defineStore('user', {
     error: null,
   }),
   actions: {
+    init() {
+      if (this.isAuthenticated) return;
+
+      const session = localStorage.getItem(STORAGE_KEY);
+      if (session) {
+        if (session) {
+          this.user = JSON.parse(session);
+          this.isAuthenticated = true;
+        }
+      }
+    },
     async login(payload: { email: string; password: string }) {
       try {
         this.loading = true;
@@ -35,6 +46,7 @@ export const useUserStore = defineStore('user', {
           name: data.name,
           email: data.email,
         };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.user));
         this.isAuthenticated = true;
       } catch (error: any) {
         console.log('Login error:', error);
@@ -49,10 +61,12 @@ export const useUserStore = defineStore('user', {
     },
     logout() {
       this.$reset();
+      localStorage.removeItem(STORAGE_KEY);
       delete api.defaults.headers.common.Authorization;
     },
   },
   getters: {
     userData: (state) => state.user,
+    loggued: (state) => state.isAuthenticated,
   },
 });

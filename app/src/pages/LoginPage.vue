@@ -19,11 +19,13 @@ import { ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import { useUserStore } from 'src/stores/user';
+import { useRouter } from 'vue-router';
 
 const username = ref('');
 const password = ref('');
 const $q = useQuasar();
 const userStore = useUserStore();
+const router = useRouter();
 const { error } = storeToRefs(userStore);
 
 const submitForm = async () => {
@@ -34,6 +36,8 @@ const submitForm = async () => {
       message: error.value,
       html: true,
     });
+  } else {
+    await router.push({ name: 'panel' });
   }
 };
 </script>
