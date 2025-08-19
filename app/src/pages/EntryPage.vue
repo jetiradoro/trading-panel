@@ -9,8 +9,12 @@
           src="/images/entry_logo.png"
           fit="contain"
           class="full-width full-height"
-          style="max-width: 100vw; max-height: 100vh"
-        />
+          style="max-height: 100vh"
+        >
+          <div class="absolute-bottom text-subtitle1 text-center text-gray">
+            v{{ config.version }}
+          </div>
+        </q-img>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -19,6 +23,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { onMounted } from 'vue';
+import { config } from 'src/config';
 
 const router = useRouter();
 onMounted(() => {
