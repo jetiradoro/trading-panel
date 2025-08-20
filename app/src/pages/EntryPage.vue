@@ -6,7 +6,7 @@
         class="row items-center justify-center full-height full-width"
       >
         <q-img
-          src="/images/entry_logo.png"
+          src="/images/entry_logo.webp"
           fit="contain"
           class="full-width full-height"
           style="max-height: 100vh"

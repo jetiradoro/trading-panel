@@ -3,7 +3,11 @@
 
 import { defineConfig } from '#q-app/wrappers';
 import { fileURLToPath } from 'node:url';
-import {config} from 'dotenv'
+import { readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+const appVersion = pkg.version;
+
 export default defineConfig((ctx) => {
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -54,8 +58,7 @@ export default defineConfig((ctx) => {
       // publicPath: '/',
       // analyze: true,
       env: {
-        API_URL: process.env.VITE_API_URL,
-        API_PORT: process.env.VITE_API_PORT,
+        APP_VERSION: appVersion,
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
@@ -172,6 +175,9 @@ export default defineConfig((ctx) => {
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
       workboxMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
+      name: 'Trading Panel',
+      short_name: 'TradingPanel',
+      version: appVersion,
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json',
       // extendManifestJson (json) {},

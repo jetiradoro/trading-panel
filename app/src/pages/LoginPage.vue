@@ -2,9 +2,14 @@
   <q-page class="row justify-between items-center">
     <div class="col-12 col-md-6 q-pa-md">
       <q-card class="q-pa-md">
-        <img src="/images/logo_only.png" class="block q-mx-auto" style="max-width: 80px" />
+        <img src="/images/logo_only.webp" class="block q-mx-auto" style="max-width: 80px" />
         <q-card-section>
-          <q-form @submit="submitForm" ref="loginForm" class="row q-gutter-md column">
+          <q-form
+            @keydown.enter.prevent="submitForm"
+            @submit="submitForm"
+            ref="loginForm"
+            class="row q-gutter-md column"
+          >
             <q-input type="email" autocomplete="no" filled v-model="username" label="Email" />
             <q-input filled v-model="password" type="password" label="Password" />
           </q-form>
@@ -16,7 +21,11 @@
       </q-card>
     </div>
     <div class="gt-sm col-12 col-md-6" style="background: #05050e">
-      <q-img src="/images/entry_logo.png" fit="contain" style="max-width: 100vw; max-height: 100vh">
+      <q-img
+        src="/images/entry_logo.webp"
+        fit="contain"
+        style="max-width: 100vw; max-height: 100vh"
+      >
       </q-img>
     </div>
   </q-page>

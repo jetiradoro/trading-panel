@@ -1,4 +1,5 @@
 export const config = {
-  apiUrl: 'http://trading-api.loc',
-  version: '1.0.0',
+  apiUrl: import.meta.env.VITE_API_URL,
+  version: process.env.APP_VERSION,
+  app_name: 'Trading Panel',
 };
