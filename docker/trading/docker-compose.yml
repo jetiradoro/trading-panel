@@ -10,7 +10,7 @@ services:
       - TZ=Europe/Madrid
       - VIRTUAL_HOST=${API_HOST}
       - VIRTUAL_PORT=${API_PORT}
-    user: "1000:1000"
+    user: "${UUID}:1000"
     networks:
       - docker-net
     working_dir: /app
