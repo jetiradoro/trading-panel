@@ -31,7 +31,7 @@ services:
       - TZ=Europe/Madrid
       - VIRTUAL_HOST=${APP_HOST}
       - VIRTUAL_PORT=${APP_PORT}
-    user: "1000:1000"
+    user: "${UUID}:1000"
     networks:
       - docker-net
     working_dir: /app
