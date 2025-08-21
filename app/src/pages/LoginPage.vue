@@ -2,7 +2,11 @@
   <q-page class="row justify-between items-center">
     <div class="col-12 col-md-6 q-pa-md">
       <q-card class="q-pa-md">
-        <img src="/images/logo_only.webp" class="block q-mx-auto" style="max-width: 80px" />
+        <img
+          src="/images/logo_2/logo_2_only.webp"
+          class="block q-mx-auto"
+          style="max-width: 80px"
+        />
         <q-card-section>
           <q-form
             @keydown.enter.prevent="submitForm"
@@ -20,9 +24,9 @@
         </q-card-actions>
       </q-card>
     </div>
-    <div class="gt-sm col-12 col-md-6" style="background: #05050e">
+    <div class="gt-sm col-12 col-md-6" style="background: #000">
       <q-img
-        src="/images/entry_logo.webp"
+        src="/images/logo_2/logo_2_background.webp"
         fit="contain"
         style="max-width: 100vw; max-height: 100vh"
       >
