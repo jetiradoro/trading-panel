@@ -25,5 +25,5 @@ const config = {
     dbUrl: process.env.DATABASE_URL,
   },
 };
-console.log({ config });
+
 export default () => config;
