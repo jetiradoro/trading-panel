@@ -2,11 +2,11 @@
   <q-layout view="">
     <q-page-container class="full-width full-height">
       <q-page
-        style="background: #05050e"
+        style="background: #000"
         class="row items-center justify-center full-height full-width"
       >
         <q-img
-          src="/images/entry_logo.webp"
+          src="/images/logo_2/logo_2_background.webp"
           fit="contain"
           class="full-width full-height"
           style="max-height: 100vh"

@@ -1,4 +1,10 @@
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
 const config = {
+  cors_origin: process.env.CORS_ORIGIN,
+
   app: {
     port: process.env.API_PORT || 3000,
     env: process.env.DOCKER_ENVIRONMENT || 'development',
@@ -19,5 +25,5 @@ const config = {
     dbUrl: process.env.DATABASE_URL,
   },
 };
-
+console.log({ config });
 export default () => config;

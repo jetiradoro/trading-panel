@@ -111,6 +111,7 @@ export default defineConfig((ctx) => {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
       config: {
+        dark: true,
         notify: {
           position: 'bottom',
           timeout: 3000,

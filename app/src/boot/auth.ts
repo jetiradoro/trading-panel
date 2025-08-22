@@ -2,11 +2,10 @@ import { boot } from 'quasar/wrappers';
 import { useUserStore } from 'src/stores/user';
 import type { RouteLocationNormalized } from 'vue-router';
 
-export default boot(({ router }) => {
+export default boot(async ({ router }) => {
   const user = useUserStore();
-
+  await user.init();
   router.beforeEach((to: RouteLocationNormalized) => {
-    user.init();
     const isAuth = user.loggued;
     // Si la ruta es pública:
     if (to.meta?.public === true) {

@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { FormatDateInterceptor } from './common/interceptors/format-date.interceptor';
+import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
@@ -11,13 +12,20 @@ async function bootstrap() {
     }),
   );
   app.useGlobalInterceptors(new FormatDateInterceptor());
-  app.enableCors({
-    origin: '*', // Adjust this to your frontend URL
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: false,
-  });
+  app.use(cookieParser());
+
   const config = app.get(ConfigService);
   const port = config.get('app.port');
+console.log({
+  origin: config.get('cors_origin'), // Adjust this to your frontend URL
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+})
+  app.enableCors({
+    origin: config.get('cors_origin'), // Adjust this to your frontend URL
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
   await app.listen(port);
   console.log(`Application is running on: ${await app.getUrl()}`);
 }

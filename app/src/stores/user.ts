@@ -3,7 +3,6 @@ import { api } from 'boot/axios';
 const STORAGE_KEY = 'auth_trading_session';
 interface User {
   access_token: string;
-  refresh_token: string;
   name: string;
   email: string;
 }
@@ -23,18 +22,33 @@ export const useUserStore = defineStore('user', {
     error: null,
   }),
   actions: {
-    init() {
-      if (this.isAuthenticated) return;
-
+    async init() {
       const session = localStorage.getItem(STORAGE_KEY);
       if (session) {
-        if (session) {
-          this.user = JSON.parse(session);
+        this.user = JSON.parse(session);
+        try {
+          await this.me();
+          // console.log('me success');
           this.isAuthenticated = true;
+          api.defaults.headers.common.Authorization = `Bearer ${this.user?.access_token}`;
+        } catch {
+          console.log('me error');
+          await this.refresh();
         }
+      } else {
+        console.log('no session');
+        this.logout();
       }
     },
-    async login(payload: { email: string; password: string }) {
+    async me() {
+      const { data } = await api.get('/users/me', {
+        headers: {
+          Authorization: `Bearer ${this.user?.access_token}`,
+        },
+      });
+      return data;
+    },
+    async login(payload: { username: string; password: string }) {
       try {
         this.loading = true;
         this.error = null;
@@ -42,7 +56,6 @@ export const useUserStore = defineStore('user', {
         // console.log('Login response:', data);
         this.user = {
           access_token: data.access_token,
-          refresh_token: data.refresh_token,
           name: data.name,
           email: data.email,
         };
@@ -63,6 +76,23 @@ export const useUserStore = defineStore('user', {
       this.$reset();
       localStorage.removeItem(STORAGE_KEY);
       delete api.defaults.headers.common.Authorization;
+    },
+    async refresh() {
+      try {
+        const { data } = await api.post('/auth/refresh');
+        console.log('refresh token');
+        this.user = {
+          access_token: data.access_token,
+          name: data.name,
+          email: data.email,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.user));
+        this.isAuthenticated = true;
+        api.defaults.headers.common.Authorization = `Bearer ${this.user?.access_token}`;
+      } catch {
+        console.log('refresh invalid');
+        this.logout();
+      }
     },
   },
   getters: {

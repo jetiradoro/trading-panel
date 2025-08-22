@@ -50,7 +50,7 @@ const router = useRouter();
 const { error } = storeToRefs(userStore);
 
 const submitForm = async () => {
-  await userStore.login({ email: username.value, password: password.value });
+  await userStore.login({ username: username.value, password: password.value });
   if (error.value) {
     $q.notify({
       type: 'negative',
