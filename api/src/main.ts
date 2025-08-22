@@ -16,11 +16,6 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
   const port = config.get('app.port');
-console.log({
-  origin: config.get('cors_origin'), // Adjust this to your frontend URL
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-})
   app.enableCors({
     origin: config.get('cors_origin'), // Adjust this to your frontend URL
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',

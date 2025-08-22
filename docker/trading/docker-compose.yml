@@ -10,7 +10,7 @@ services:
       - TZ=Europe/Madrid
       - VIRTUAL_HOST=${API_HOST}
       - VIRTUAL_PORT=${API_PORT}
-    user: "${UUID}:1000"
+    user: "1000:1000"
     networks:
       - docker-net
     working_dir: /app
@@ -31,7 +31,7 @@ services:
       - TZ=Europe/Madrid
       - VIRTUAL_HOST=${APP_HOST}
       - VIRTUAL_PORT=${APP_PORT}
-    user: "${UUID}:1000"
+    user: "1000:1000"
     networks:
       - docker-net
     working_dir: /app
@@ -39,7 +39,7 @@ services:
       - ../../app:/app
       - ./app/init_container.sh:/scripts/init_container.sh
     command: bash /scripts/init_container.sh
-  
+
 networks:
   docker-net:
     external: ${NET_EXTERNAL}
