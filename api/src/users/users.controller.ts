@@ -8,14 +8,12 @@ import {
   Delete,
   HttpException,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { Request } from 'express';
 import { AppClient } from '../common/decorators/app-client.decorator';
 
 @Controller('users')
@@ -34,7 +32,7 @@ export class UsersController {
   }
 
   @Get('/me')
-  me(@AppClient() user){
+  me(@AppClient() user) {
     return user;
   }
 
@@ -56,6 +54,4 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
-
-
 }
