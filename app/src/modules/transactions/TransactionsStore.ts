@@ -53,7 +53,7 @@ export const useTransactionsStore = defineStore('transactions', {
           };
         }
         result[groupKey].transactions.push(transaction);
-        result[groupKey].balance += transaction.amount;
+        result[groupKey].balance += transaction.amount.toFixed(2);
         open = false;
       });
       return result;
