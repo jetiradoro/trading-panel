@@ -55,7 +55,7 @@ onMounted(async () => {
 });
 
 function getMonthName(item: any) {
-  return `${item.month}: ${item.balance} €`;
+  return `${item.month}: ${item.balance.toFixed(2)} €`;
 }
 
 const items = computed(() => store.getGroupedByMonth);
