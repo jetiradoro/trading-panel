@@ -22,18 +22,26 @@ export const useUserStore = defineStore('user', {
     error: null,
   }),
   actions: {
+    setAuthHeader(token: string | null) {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+    },
+    removeAuthHeader() {
+      delete api.defaults.headers.common.Authorization;
+    },
     async init() {
       const session = localStorage.getItem(STORAGE_KEY);
       if (session) {
         this.user = JSON.parse(session);
-        try {
-          await this.me();
-          // console.log('me success');
-          this.isAuthenticated = true;
-          api.defaults.headers.common.Authorization = `Bearer ${this.user?.access_token}`;
-        } catch {
-          console.log('me error');
-          await this.refresh();
+        if (this.user?.access_token) {
+          this.setAuthHeader(this.user.access_token);
+          try {
+            await this.me();
+            // console.log('me success');
+            this.isAuthenticated = true;
+          } catch {
+            console.log('me error');
+            await this.refresh();
+          }
         }
       } else {
         console.log('no session');
@@ -41,11 +49,7 @@ export const useUserStore = defineStore('user', {
       }
     },
     async me() {
-      const { data } = await api.get('/users/me', {
-        headers: {
-          Authorization: `Bearer ${this.user?.access_token}`,
-        },
-      });
+      const { data } = await api.get('/users/me');
       return data;
     },
     async login(payload: { username: string; password: string }) {
@@ -60,6 +64,7 @@ export const useUserStore = defineStore('user', {
           email: data.email,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.user));
+        this.setAuthHeader(this.user.access_token);
         this.isAuthenticated = true;
       } catch (error: any) {
         console.log('Login error:', error);
@@ -75,7 +80,7 @@ export const useUserStore = defineStore('user', {
     logout() {
       this.$reset();
       localStorage.removeItem(STORAGE_KEY);
-      delete api.defaults.headers.common.Authorization;
+      this.removeAuthHeader();
     },
     async refresh() {
       try {
@@ -87,8 +92,8 @@ export const useUserStore = defineStore('user', {
           email: data.email,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.user));
+        this.setAuthHeader(this.user.access_token);
         this.isAuthenticated = true;
-        api.defaults.headers.common.Authorization = `Bearer ${this.user?.access_token}`;
       } catch {
         console.log('refresh invalid');
         this.logout();
@@ -98,5 +103,6 @@ export const useUserStore = defineStore('user', {
   getters: {
     userData: (state) => state.user,
     loggued: (state) => state.isAuthenticated,
+    userToken: (state) => state.user?.access_token || null,
   },
 });

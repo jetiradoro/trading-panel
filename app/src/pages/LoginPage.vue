@@ -39,6 +39,7 @@ import { ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import { useUserStore } from 'src/stores/user';
+import { useAccountStore } from 'src/stores/account';
 import { useRouter } from 'vue-router';
 import { config } from 'src/config';
 
@@ -46,6 +47,7 @@ const username = ref('');
 const password = ref('');
 const $q = useQuasar();
 const userStore = useUserStore();
+const accountStore = useAccountStore();
 const router = useRouter();
 const { error } = storeToRefs(userStore);
 
@@ -58,6 +60,7 @@ const submitForm = async () => {
       html: true,
     });
   } else {
+    await accountStore.getCurrent();
     await router.push({ name: 'panel' });
   }
 };

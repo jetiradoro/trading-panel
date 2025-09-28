@@ -44,4 +44,10 @@ export class AccountsService {
   remove(id: string) {
     return this.prisma.accounts.delete({ where: { id } });
   }
+
+  findCurrentAccount(userId: string): Promise<accounts | null> {
+    return this.prisma.accounts.findFirst({
+      where: { userId: userId, active: true },
+    });
+  }
 }

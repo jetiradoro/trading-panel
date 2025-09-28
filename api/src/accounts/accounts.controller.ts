@@ -30,6 +30,14 @@ export class AccountsController {
     return this.service.findAll(user.id);
   }
 
+  @Get('active')
+  findActiveByUser(@AppClient() user: users) {
+    return this.service.findBy({
+      userId: user.id,
+      active: true,
+    });
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findBy({ id });
