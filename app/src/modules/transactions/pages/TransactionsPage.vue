@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <TransactionsList />
+    <TransactionsList class="q-mt-md" />
   </q-page>
 </template>
 <script setup lang="ts">

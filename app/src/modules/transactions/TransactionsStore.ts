@@ -34,5 +34,29 @@ export const useTransactionsStore = defineStore('transactions', {
     getBalance: (state): number => {
       return state.balance;
     },
+    getGroupedByMonth: (state) => {
+      const result = {} as any;
+      let open: boolean = true;
+      state.transactions.forEach((transaction) => {
+        const date = new Date(transaction.date);
+        const month = date.toLocaleString('default', { month: 'long' }).toUpperCase();
+        const year = date.getFullYear();
+        const groupKey = `${month}-${year}`;
+        const groupLabel = `${month} ${year}`;
+
+        if (!result[groupKey]) {
+          result[groupKey] = {
+            open,
+            month: groupLabel,
+            balance: 0,
+            transactions: [],
+          };
+        }
+        result[groupKey].transactions.push(transaction);
+        result[groupKey].balance += transaction.amount;
+        open = false;
+      });
+      return result;
+    },
   },
 });
