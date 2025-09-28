@@ -1,14 +1,13 @@
 <template>
   <div>
-    <q-list v-for="(data, key) in items" :key="key" class="">
-      <q-expansion-item
-        :default-opened="data.open"
-        dense
-        dense-toggle
-        expand-separator
-        :label="getMonthName(data)"
-        switch-toggle-side
-      >
+    <q-list v-for="(data, key) in items" :key="key" class="q-mt-md">
+      <q-expansion-item switch-toggle-side :default-opened="data.open" expand-separator dense>
+        <template #header>
+          <q-item-section>{{ data.month }}</q-item-section>
+          <q-item-section side
+            >Balance: <b>{{ data.balance.toFixed(2) }} €</b></q-item-section
+          >
+        </template>
         <q-item
           v-for="(item, index) in data.transactions"
           :key="index"
@@ -53,10 +52,6 @@ const store = useTransactionsStore();
 onMounted(async () => {
   await store.fetchTransactions();
 });
-
-function getMonthName(item: any) {
-  return `${item.month}: ${item.balance.toFixed(2)} €`;
-}
 
 const items = computed(() => store.getGroupedByMonth);
 </script>
