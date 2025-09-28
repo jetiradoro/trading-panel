@@ -8,7 +8,10 @@ export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   getTransactions(filter: object): Promise<Array<transactions>> {
-    return this.prisma.transactions.findMany(filter);
+    return this.prisma.transactions.findMany({
+      ...filter,
+      orderBy: { date: 'desc' },
+    });
   }
 
   createTransaction(data: NewTransactionDto): Promise<transactions> {
