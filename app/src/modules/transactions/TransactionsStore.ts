@@ -28,6 +28,14 @@ export const useTransactionsStore = defineStore('transactions', {
         return acc + transaction.amount;
       }, 0);
     },
+
+    async deleteTransaction(transaction_id: string) {
+      try {
+        return api.delete(`/transactions/${transaction_id}`);
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+      }
+    },
   },
 
   getters: {
