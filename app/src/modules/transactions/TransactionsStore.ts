@@ -40,7 +40,7 @@ export const useTransactionsStore = defineStore('transactions', {
 
   getters: {
     getBalance: (state): number => {
-      return state.balance;
+      return parseFloat(state.balance.toFixed(2));
     },
     getGroupedByMonth: (state) => {
       const result = {} as any;
