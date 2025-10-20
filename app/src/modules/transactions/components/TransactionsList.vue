@@ -16,6 +16,7 @@
         />
       </q-expansion-item>
     </q-list>
+    <ActionsBtn />
   </div>
 </template>
 
@@ -24,6 +25,7 @@ import { computed, onMounted } from 'vue';
 import { useTransactionsStore } from '../TransactionsStore';
 import TransactionListItem from './TransactionListItem.vue';
 import { useQuasar } from 'quasar';
+import ActionsBtn from './ActionsBtn.vue';
 
 type Transaction = {
   id: string;

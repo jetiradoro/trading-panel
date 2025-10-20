@@ -10,14 +10,23 @@ interface Transaction {
   description?: string;
 }
 
+interface NewTransaction {
+  origin: string;
+  amount: number;
+  date: string;
+  description?: string;
+}
+
 interface TransactionsState {
   transactions: Transaction[];
   balance: number;
+  error: string | null;
 }
 export const useTransactionsStore = defineStore('transactions', {
   state: (): TransactionsState => ({
     transactions: [],
     balance: 0,
+    error: null,
   }),
 
   actions: {
@@ -34,6 +43,16 @@ export const useTransactionsStore = defineStore('transactions', {
         return api.delete(`/transactions/${transaction_id}`);
       } catch (error) {
         console.error('Error deleting transaction:', error);
+      }
+    },
+
+    async saveTransaction(payload: NewTransaction) {
+      try {
+        const { data } = await api.post('/transactions', payload);
+        return data;
+      } catch (error) {
+        console.error('Error saving transaction:', error);
+        this.error = 'Error saving transaction';
       }
     },
   },

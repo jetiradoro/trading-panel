@@ -7,5 +7,10 @@ export default {
       name: 'transactions',
       component: () => import('./pages/TransactionsPage.vue'),
     },
+    {
+      path: 'new',
+      name: 'transactions.new',
+      component: () => import('./pages/NewTransaction.vue'),
+    },
   ],
 };
