@@ -9,9 +9,32 @@
         :label="type"
         class="q-mb-md"
       />
-      <q-select v-model="transaction.origin" :options="origins" label="Origen" filled />
-      <q-input type="number" v-model="transaction.amount" :dense="false" label="Cantidad" />
-      <input-calendar :date="transaction.date" @setted="(val) => (transaction.date = val)" />
+      <q-select
+        class="q-mb-sm"
+        v-model="transaction.origin"
+        :options="origins"
+        label="Origen"
+        filled
+      />
+      <q-input
+        class="q-mb-sm"
+        type="number"
+        v-model="transaction.amount"
+        :dense="false"
+        label="Cantidad"
+      />
+      <q-input
+        class="q-mb-md"
+        type="text"
+        v-model="transaction.description"
+        :dense="false"
+        label="Descripción"
+      />
+      <input-calendar
+        class="q-mb-sm"
+        :date="transaction.date"
+        @setted="(val) => (transaction.date = val)"
+      />
       <div class="q-mt-md row q-gutter-sm">
         <q-btn class="q-mt-md" type="submit" label="Guardar" color="primary" />
         <q-btn
