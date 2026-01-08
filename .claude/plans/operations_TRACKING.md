@@ -4,7 +4,7 @@
 
 ## Fases
 - [x] Fase 1 - Backend base (schema, migracion, modulos)
-- [ ] Fase 2 - Logica de negocio (cierre automatico, calculos)
+- [x] Fase 2 - Logica de negocio (cierre automatico, calculos)
 - [ ] Fase 3 - Frontend estructura (stores, rutas)
 - [ ] Fase 4 - Frontend paginas (operations, symbols)
 - [ ] Fase 5 - Integracion (navegacion, config)
@@ -20,11 +20,11 @@
 - [x] Crear tests unitarios para OperationsService
 - [x] Registrar modulos en app.module.ts
 
-### Fase 2: Logica de negocio
-- [ ] Implementar createOperation con transaccion
-- [ ] Implementar addEntry + cierre automatico
-- [ ] Implementar calculos (avgPrice, currentQty, unrealizedPnL)
-- [ ] Implementar getOperationDetail con includes
+### Fase 2: Logica de negocio ✅
+- [x] Implementar createOperation con transaccion
+- [x] Implementar addEntry + cierre automatico
+- [x] Implementar calculos (avgPrice, currentQty, unrealizedPnL)
+- [x] Implementar getOperationDetail con includes
 
 ### Fase 3: Frontend estructura
 - [ ] Actualizar config.ts con diccionarios

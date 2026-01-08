@@ -1,19 +1,110 @@
-# Wiki - Documentación Funcional
+# Wiki - Documentación del Sistema de Trading
 
-Documentación del funcionamiento de la aplicación de trading. Sirve como referencia técnica y manual de usuario.
+Documentación completa de la aplicación de trading, organizada para desarrolladores y usuarios finales.
 
-## Estructura
+## 📖 Estructura de la Documentación
 
-Cada módulo/evolutivo debe tener su propio archivo documentando:
+### 🔧 [Documentación Técnica](./technical/) (Para Desarrolladores)
 
-1. **Descripción general** - Qué hace y para qué sirve
-2. **Backend** - Endpoints, servicios, validaciones
-3. **Frontend** - Componentes, flujos de navegación
-4. **Funcionalidades** - Lista detallada de features
-5. **Restricciones** - Reglas de negocio, validaciones
-6. **Permisos** - Roles y accesos requeridos
-7. **Guía de uso** - Instrucciones paso a paso para el usuario
+Documentación detallada del backend, APIs, modelos de datos y lógica de negocio.
 
-## Módulos
+**Contenido**:
+- Arquitectura y modelos de datos
+- Endpoints REST API con request/response
+- Servicios y métodos internos
+- Lógica de negocio y algoritmos
+- Validaciones y restricciones
+- DTOs y tipos TypeScript
+- Estrategias de testing
 
-- [Operaciones](./operaciones.md) - Gestión de operaciones de trading
+**Módulos**:
+- [Operaciones - API](./technical/operaciones-api.md) - Sistema de operaciones de trading
+
+---
+
+### 👤 [Manual de Usuario](./user-guide/) (Para Usuarios Finales)
+
+Guías prácticas paso a paso para usar la aplicación.
+
+**Contenido**:
+- ¿Qué es y para qué sirve?
+- Conceptos básicos explicados de forma simple
+- Cómo realizar cada acción (paso a paso)
+- Ejemplos prácticos del día a día
+- Preguntas frecuentes (FAQ)
+- Consejos y buenas prácticas
+
+**Módulos**:
+- [Operaciones - Guía de Usuario](./user-guide/operaciones.md) - Cómo gestionar tus inversiones
+
+---
+
+## 🗂️ Organización de Archivos
+
+```
+wiki/
+├── README.md                          # Este archivo
+├── technical/                         # Documentación técnica
+│   └── operaciones-api.md            # API de operaciones
+└── user-guide/                        # Manuales de usuario
+    └── operaciones.md                # Guía de operaciones
+```
+
+---
+
+## 📝 Guía para Documentar Nuevos Módulos
+
+Cada nuevo módulo o evolutivo debe documentarse en **ambas secciones**:
+
+### Documentación Técnica (`technical/`)
+
+Debe incluir:
+1. **Modelo de Datos**: Tablas, campos, relaciones, índices
+2. **Endpoints API**: Métodos, rutas, request/response, errores
+3. **Servicios**: Métodos públicos y privados con firma
+4. **Lógica de Negocio**: Algoritmos, fórmulas, condiciones
+5. **Validaciones**: A nivel BD y aplicación
+6. **DTOs**: Estructuras de datos
+7. **Testing**: Cobertura y estrategias
+
+### Manual de Usuario (`user-guide/`)
+
+Debe incluir:
+1. **Introducción**: Qué es y para qué sirve (lenguaje simple)
+2. **Conceptos Básicos**: Términos explicados de forma clara
+3. **Tipos/Variantes**: Si aplica (ej: Long vs Short)
+4. **Guía Paso a Paso**: Cómo hacer cada acción principal
+5. **Ejemplos Prácticos**: Casos reales del día a día
+6. **Preguntas Frecuentes**: Dudas comunes
+7. **Consejos**: Buenas prácticas
+
+---
+
+## 🎯 Principios de Documentación
+
+1. **Separación clara**: Técnica para devs, usuario para usuarios
+2. **Ejemplos reales**: Usar casos concretos con números
+3. **Lenguaje apropiado**: Técnico en technical/, simple en user-guide/
+4. **Mantener actualizado**: Documentar junto con el código
+5. **Ser específico**: Evitar ambigüedades, dar detalles exactos
+6. **Incluir edge cases**: Documentar comportamientos especiales
+
+---
+
+## 📚 Módulos Disponibles
+
+| Módulo | Estado | Documentación Técnica | Manual Usuario |
+|--------|--------|----------------------|----------------|
+| Operaciones | ✅ Fase 2 | [Ver](./technical/operaciones-api.md) | [Ver](./user-guide/operaciones.md) |
+
+---
+
+## 🔄 Roadmap de Documentación
+
+- [x] Estructura base de wiki separada
+- [x] Documentación de Operaciones (Backend - Fase 2)
+- [ ] Documentación de Operaciones (Frontend - Fase 3-5)
+- [ ] Documentación de Símbolos
+- [ ] Documentación de Cuentas
+- [ ] Documentación de Transacciones
+- [ ] Screenshots y videos tutoriales
