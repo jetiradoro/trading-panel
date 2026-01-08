@@ -1,6 +1,7 @@
 import { boot } from 'quasar/wrappers';
 import { useUserStore } from 'src/stores/user';
 import type { RouteLocationNormalized } from 'vue-router';
+import { config } from 'src/config';
 
 export default boot(async ({ router }) => {
   const user = useUserStore();
@@ -11,7 +12,7 @@ export default boot(async ({ router }) => {
     if (to.meta?.public === true) {
       // Si ya está logado y va a /login -> al panel
       if (isAuth && (to.name === 'login' || to.path === '/login')) {
-        return { name: 'panel' };
+        return { name: config.home_page };
       }
       return true;
     }

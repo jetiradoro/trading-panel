@@ -1,0 +1,19 @@
+import { IsNotEmpty, IsOptional, IsIn } from 'class-validator';
+
+/**
+ * DTO para crear un símbolo de trading
+ */
+export class CreateSymbolDto {
+  @IsNotEmpty()
+  code: string;
+
+  @IsNotEmpty()
+  name: string;
+
+  @IsOptional()
+  logo?: string;
+
+  @IsNotEmpty()
+  @IsIn(['crypto', 'stock'])
+  product: string;
+}

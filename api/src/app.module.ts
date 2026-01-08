@@ -10,6 +10,8 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { SymbolsModule } from './symbols/symbols.module';
+import { OperationsModule } from './operations/operations.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { TransactionsModule } from './transactions/transactions.module';
     PrismaModule,
     AccountsModule,
     TransactionsModule,
+    SymbolsModule,
+    OperationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -15,6 +15,21 @@ Archivos de conocimiento en `.claude/`:
 - `VUE_COMPONENTS.md` - Directrices Vue/Quasar
 - `plans/` - Planes de desarrollo y tracking
 
+Documentación funcional en `wiki/`:
+- Documentación del funcionamiento de la aplicación
+- Sirve como referencia técnica y manual de usuario
+- Cada evolutivo debe documentarse aquí
+
+## Planes de Desarrollo
+
+Todo plan debe incluir un paso final de **documentación en wiki/** que describa:
+- Flujo y proceso del evolutivo
+- Funcionamiento backend y frontend
+- Funcionalidades implementadas
+- Restricciones y validaciones
+- Permisos requeridos
+- Guía de uso para el usuario
+
 ## Reglas Principales
 
 1. **SOLID** + funciones de propósito único

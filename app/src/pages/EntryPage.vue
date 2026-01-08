@@ -29,6 +29,6 @@ const router = useRouter();
 onMounted(() => {
   setTimeout(() => {
     void router.push({ name: 'login' });
-  }, 3000);
+  }, 1000);
 });
 </script>

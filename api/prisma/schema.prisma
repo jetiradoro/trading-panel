@@ -34,7 +34,8 @@ model accounts {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  transactions transactions[] // Relación inversa
+  transactions transactions[]
+  operations   operations[]
 
   @@index([userId])
 }
@@ -46,7 +47,7 @@ model transactions {
   amount    Float
   origin    String
   description String? @db.VarChar(255)
-  date      DateTime 
+  date      DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -54,4 +55,66 @@ model transactions {
 
   @@index([userId])
   @@index([origin])
+}
+
+model symbols {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  logo      String?
+  product   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  operations operations[]
+}
+
+model operations {
+  id        String   @id @default(cuid())
+  accountId String
+  userId    String
+  symbolId  String
+  product   String
+  type      String
+  status    String   @default("open")
+  balance   Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account accounts          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol  symbols           @relation(fields: [symbolId], references: [id])
+  entries operation_entries[]
+  prices  price_history[]
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([symbolId])
+  @@index([status])
+}
+
+model operation_entries {
+  id          String   @id @default(cuid())
+  operationId String
+  entryType   String
+  quantity    Float
+  price       Float
+  tax         Float    @default(0)
+  date        DateTime
+  createdAt   DateTime @default(now())
+
+  operation operations @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  @@index([operationId])
+}
+
+model price_history {
+  id          String   @id @default(cuid())
+  operationId String
+  price       Float
+  date        DateTime
+  createdAt   DateTime @default(now())
+
+  operation operations @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  @@index([operationId])
 }
