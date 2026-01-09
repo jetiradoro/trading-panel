@@ -1,0 +1,175 @@
+<template>
+  <q-page class="q-pa-md">
+    <q-form @submit="save">
+      <SymbolSelector
+        v-model="operation.symbolId"
+        v-model:product="operation.product"
+        class="q-mb-md"
+      />
+
+      <q-select
+        v-model="operation.type"
+        :options="typeOptions"
+        label="Tipo de operación"
+        outlined
+        dense
+        emit-value
+        map-options
+        class="q-mb-md"
+        :rules="[(val) => !!val || 'Campo requerido']"
+      />
+
+      <q-separator class="q-my-md" />
+
+      <div class="text-h6 q-mb-md">Primera entrada</div>
+
+      <q-select
+        v-model="firstEntry.entryType"
+        :options="entryTypeOptions"
+        label="Tipo de entrada"
+        outlined
+        dense
+        emit-value
+        map-options
+        class="q-mb-md"
+        :rules="[(val) => !!val || 'Campo requerido']"
+      />
+
+      <q-input
+        v-model.number="firstEntry.quantity"
+        type="number"
+        label="Cantidad"
+        outlined
+        dense
+        class="q-mb-md"
+        :rules="[(val) => val > 0 || 'Debe ser mayor que 0']"
+      />
+
+      <q-input
+        v-model.number="firstEntry.price"
+        type="number"
+        label="Precio"
+        outlined
+        dense
+        class="q-mb-md"
+        suffix="€"
+        :rules="[(val) => val > 0 || 'Debe ser mayor que 0']"
+      />
+
+      <q-input
+        v-model.number="firstEntry.tax"
+        type="number"
+        label="Comisión"
+        outlined
+        dense
+        class="q-mb-md"
+        suffix="€"
+      />
+
+      <input-calendar
+        class="q-mb-md"
+        :date="firstEntry.date"
+        @setted="(val) => (firstEntry.date = val)"
+      />
+
+      <div class="q-mt-md row q-gutter-sm">
+        <q-btn type="submit" label="Crear operación" color="primary" :loading="loading" />
+        <q-btn type="button" label="Cancelar" color="red" :to="{ name: 'operations' }" />
+      </div>
+    </q-form>
+  </q-page>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useAppStore } from 'src/stores/app';
+import { useOperationsStore } from '../OperationsStore';
+import { useAccountStore } from 'src/stores/account';
+import { operationTypes, entryTypes } from 'src/config';
+import dayjs from 'dayjs';
+import InputCalendar from 'src/components/InputCalendar.vue';
+import SymbolSelector from '../components/SymbolSelector.vue';
+import { useQuasar } from 'quasar';
+import { useRouter } from 'vue-router';
+
+const appStore = useAppStore();
+const operationsStore = useOperationsStore();
+const accountStore = useAccountStore();
+const $q = useQuasar();
+const router = useRouter();
+
+appStore.setSection('Nueva Operación');
+
+const loading = ref(false);
+
+const operation = ref({
+  symbolId: '',
+  product: '',
+  type: '',
+});
+
+const firstEntry = ref({
+  entryType: 'buy',
+  quantity: 0,
+  price: 0,
+  tax: 0,
+  date: dayjs().format('YYYY-MM-DD HH:mm'),
+});
+
+const typeOptions = operationTypes.map((t) => ({
+  label: t.label,
+  value: t.code,
+}));
+
+const entryTypeOptions = entryTypes.map((e) => ({
+  label: e.label,
+  value: e.code,
+}));
+
+const currentAccountId = computed(() => accountStore.currentAccount?.id);
+
+async function save() {
+  if (!currentAccountId.value) {
+    $q.notify({
+      type: 'negative',
+      message: 'No hay cuenta seleccionada',
+    });
+    return;
+  }
+
+  if (!operation.value.symbolId) {
+    $q.notify({
+      type: 'negative',
+      message: 'Debe seleccionar un símbolo',
+    });
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    await operationsStore.createOperation({
+      accountId: currentAccountId.value,
+      symbolId: operation.value.symbolId,
+      product: operation.value.product,
+      type: operation.value.type,
+      firstEntry: firstEntry.value,
+    });
+
+    $q.notify({
+      type: 'positive',
+      message: 'Operación creada correctamente',
+    });
+
+    await router.push({ name: 'operations' });
+  } catch (error) {
+    console.error('Error creating operation:', error);
+    $q.notify({
+      type: 'negative',
+      message: operationsStore.error || 'Error al crear operación',
+    });
+  } finally {
+    loading.value = false;
+  }
+}
+</script>

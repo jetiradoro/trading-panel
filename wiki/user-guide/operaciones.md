@@ -13,7 +13,7 @@
 
 ## ¿Qué son las Operaciones?
 
-Una **operación de trading** es un registro que agrupa todas las compras y ventas que realizas de un activo financiero (criptomoneda o acción) hasta completar el ciclo de inversión.
+Una **operación de trading** es un registro que agrupa todas las compras y ventas que realizas de un activo financiero (criptomoneda, acción o ETF) hasta completar el ciclo de inversión.
 
 ### Conceptos Básicos
 
@@ -75,9 +75,8 @@ Una **operación de trading** es un registro que agrupa todas las compras y vent
 1. Accede a la sección "Operaciones"
 2. Haz clic en "Nueva Operación"
 3. Completa el formulario:
-   - **Cuenta**: Selecciona la cuenta donde registrarás la operación
-   - **Símbolo**: Elige el activo (ej: BTC, ETH, AAPL)
-   - **Producto**: Criptomoneda o Acción
+   - **Símbolo**: Elige o crea el activo (ej: BTC, ETH, AAPL)
+   - **Producto**: Criptomoneda, Acción o ETF
    - **Tipo**: Long (compra) o Short (venta)
    - **Primera Entrada** (opcional):
      - Tipo: Buy o Sell

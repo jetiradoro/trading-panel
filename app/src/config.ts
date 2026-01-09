@@ -4,3 +4,27 @@ export const config = {
   app_name: 'Trading Panel',
   home_page: 'transactions', // 'transactions','panel'
 };
+
+/**
+ * Diccionarios para el módulo de operaciones
+ */
+export const products = [
+  { code: 'crypto', label: 'Criptomoneda' },
+  { code: 'stock', label: 'Acción' },
+  { code: 'etf', label: 'ETF' },
+];
+
+export const operationTypes = [
+  { code: 'long', label: 'Long (Compra)' },
+  { code: 'short', label: 'Short (Venta)' },
+];
+
+export const entryTypes = [
+  { code: 'buy', label: 'Compra' },
+  { code: 'sell', label: 'Venta' },
+];
+
+export const operationStatus = [
+  { code: 'open', label: 'Abierta', color: 'green' },
+  { code: 'closed', label: 'Cerrada', color: 'grey' },
+];

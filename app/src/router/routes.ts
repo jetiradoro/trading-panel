@@ -1,5 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 import transactionsRoutes from '../modules/transactions/routes';
+import operationsRoutes from '../modules/operations/routes';
+import symbolsRoutes from '../modules/symbols/routes';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -37,6 +39,8 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   transactionsRoutes,
+  operationsRoutes,
+  symbolsRoutes,
 
   // Always leave this as last one,
   // but you can also remove it

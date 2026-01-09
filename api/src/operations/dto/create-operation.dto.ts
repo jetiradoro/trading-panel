@@ -16,7 +16,7 @@ export class CreateOperationDto {
   symbolId: string;
 
   @IsNotEmpty()
-  @IsIn(['crypto', 'stock'])
+  @IsIn(['crypto', 'stock', 'etf'])
   product: string;
 
   @IsNotEmpty()

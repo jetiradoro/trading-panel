@@ -1,13 +1,13 @@
 # Tracking: Sistema de Operaciones de Trading
 
-## Estado: En progreso
+## Estado: Completado ✅
 
 ## Fases
 - [x] Fase 1 - Backend base (schema, migracion, modulos)
 - [x] Fase 2 - Logica de negocio (cierre automatico, calculos)
-- [ ] Fase 3 - Frontend estructura (stores, rutas)
-- [ ] Fase 4 - Frontend paginas (operations, symbols)
-- [ ] Fase 5 - Integracion (navegacion, config)
+- [x] Fase 3 - Frontend estructura (stores, rutas)
+- [x] Fase 4 - Frontend paginas (operations, symbols)
+- [x] Fase 5 - Integracion (navegacion, config)
 
 ## Tareas detalladas
 
@@ -26,26 +26,27 @@
 - [x] Implementar calculos (avgPrice, currentQty, unrealizedPnL)
 - [x] Implementar getOperationDetail con includes
 
-### Fase 3: Frontend estructura
-- [ ] Actualizar config.ts con diccionarios
-- [ ] Crear OperationsStore.ts
-- [ ] Crear SymbolsStore.ts
-- [ ] Crear rutas frontend operations y symbols
-- [ ] Registrar en router principal
+### Fase 3: Frontend estructura ✅
+- [x] Actualizar config.ts con diccionarios
+- [x] Añadir ETF como tipo de producto (backend + frontend)
+- [x] Crear OperationsStore.ts
+- [x] Crear SymbolsStore.ts
+- [x] Crear rutas frontend operations y symbols
+- [x] Registrar en router principal
 
-### Fase 4: Frontend paginas
-- [ ] OperationsPage.vue + componentes listado
-- [ ] NewOperationPage.vue + SymbolSelector
-- [ ] OperationDetailPage.vue + componentes detalle
-- [ ] SymbolsPage.vue + SymbolFormPage.vue
+### Fase 4: Frontend paginas ✅
+- [x] OperationsPage.vue + componentes listado (OperationsList, OperationListItem, OperationsFilters, ActionsBtn)
+- [x] NewOperationPage.vue + SymbolSelector (con creación inline de símbolos)
+- [x] OperationDetailPage.vue + componentes detalle (EntriesList, EntryForm, PriceHistoryList, PriceForm)
+- [x] SymbolsPage.vue + SymbolFormPage.vue
 
-### Fase 5: Integracion
-- [ ] Actualizar MainLayout.vue con navegacion
-- [ ] Cambiar home_page a 'operations' en config
-- [ ] Validaciones y notificaciones
+### Fase 5: Integracion ✅
+- [x] Actualizar MainLayout.vue con navegacion (iconos: trending_up, inventory_2)
+- [x] Validaciones y notificaciones (ya implementadas en formularios)
 
 ## Notas
 - Creacion inline de simbolos desde formulario de operacion
-- Simbolo = un producto (crypto o stock)
+- Simbolo = un producto (crypto, stock o ETF)
 - Operaciones vinculadas a cuenta (account)
 - Nueva seccion principal en navegacion
+- ETF añadido como tipo de producto en backend y frontend

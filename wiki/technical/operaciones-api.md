@@ -21,7 +21,7 @@ Tabla principal de operaciones de trading.
 - `accountId` (String, FK) - Cuenta asociada
 - `userId` (String, Indexed) - Usuario propietario
 - `symbolId` (String, FK) - Símbolo/activo
-- `product` (String) - Tipo de producto: `crypto` | `stock`
+- `product` (String) - Tipo de producto: `crypto` | `stock` | `etf`
 - `type` (String) - Tipo de operación: `long` | `short`
 - `status` (String) - Estado: `open` | `closed` (default: `open`)
 - `balance` (Float, Nullable) - Balance final (null hasta cerrar)
@@ -86,7 +86,7 @@ Catálogo de símbolos/activos disponibles.
 - `code` (String, Unique) - Código del símbolo (ej: BTC, AAPL)
 - `name` (String) - Nombre completo
 - `logo` (String, Nullable) - URL del logo
-- `product` (String) - Tipo: `crypto` | `stock`
+- `product` (String) - Tipo: `crypto` | `stock` | `etf`
 - `createdAt` (DateTime) - Fecha de creación
 - `updatedAt` (DateTime) - Fecha de actualización
 
@@ -108,7 +108,7 @@ Crear nueva operación con entrada inicial opcional.
 {
   accountId: string;      // ID de la cuenta
   symbolId: string;       // ID del símbolo
-  product: 'crypto' | 'stock';
+  product: 'crypto' | 'stock' | 'etf';
   type: 'long' | 'short';
   firstEntry?: {
     entryType: 'buy' | 'sell';
@@ -138,7 +138,7 @@ Listar operaciones del usuario con filtros opcionales.
 
 **Query Params**:
 - `status?: string` - Filtrar por estado (`open` | `closed`)
-- `product?: string` - Filtrar por producto (`crypto` | `stock`)
+- `product?: string` - Filtrar por producto (`crypto` | `stock` | `etf`)
 - `symbolId?: string` - Filtrar por símbolo específico
 
 **Response**: Array de `operations` con relaciones `symbol` y `account`
@@ -441,7 +441,7 @@ Nota: `currentPrice` se obtiene del último registro en `price_history`. Si no e
 - Usuario solo accede a sus propias operaciones
 
 **Validaciones de Enums**:
-- `product`: `crypto` | `stock`
+- `product`: `crypto` | `stock` | `etf`
 - `type`: `long` | `short`
 - `entryType`: `buy` | `sell`
 - `status`: `open` | `closed`
@@ -465,7 +465,7 @@ Nota: `currentPrice` se obtiene del último registro en `price_history`. Si no e
 {
   accountId: string;
   symbolId: string;
-  product: 'crypto' | 'stock';
+  product: 'crypto' | 'stock' | 'etf';
   type: 'long' | 'short';
   userId: string;  // asignado automáticamente
   firstEntry?: CreateEntryDto;

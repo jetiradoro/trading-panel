@@ -91,6 +91,15 @@ export class OperationsService {
             date: new Date(firstEntry.date),
           },
         });
+
+        // Insertar automáticamente el precio de entrada en el historial
+        await tx.price_history.create({
+          data: {
+            operationId: operation.id,
+            price: firstEntry.price,
+            date: new Date(firstEntry.date),
+          },
+        });
       }
 
       return operation;
@@ -105,10 +114,10 @@ export class OperationsService {
     status?: string;
     product?: string;
     symbolId?: string;
-  }): Promise<operations[]> {
+  }): Promise<any[]> {
     const { userId, status, product, symbolId } = filters;
 
-    return this.prisma.operations.findMany({
+    const operations = await this.prisma.operations.findMany({
       where: {
         userId,
         ...(status && { status }),
@@ -118,8 +127,28 @@ export class OperationsService {
       include: {
         symbol: true,
         account: true,
+        entries: {
+          orderBy: { date: 'asc' },
+        },
+        prices: {
+          orderBy: { date: 'desc' },
+          take: 1,
+        },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    // Calcular métricas para operaciones abiertas
+    return operations.map((operation) => {
+      if (operation.status === 'open') {
+        const currentPrice = operation.prices[0]?.price;
+        const metrics = this.calculateMetrics(operation, currentPrice ? Number(currentPrice) : undefined);
+        return {
+          ...operation,
+          metrics,
+        };
+      }
+      return operation;
     });
   }
 
@@ -140,11 +169,21 @@ export class OperationsService {
     const avgBuyPrice = buyQty > 0 ? buyTotal / buyQty : 0;
 
     let unrealizedPnL: number | null = null;
+    let pnlPercentage: number | null = null;
+    let currentInvestment: number | null = null;
+
     if (currentPrice && currentQty > 0) {
+      currentInvestment = avgBuyPrice * currentQty;
+
       if (operation.type === 'long') {
         unrealizedPnL = (currentPrice - avgBuyPrice) * currentQty;
       } else {
         unrealizedPnL = (avgBuyPrice - currentPrice) * currentQty;
+      }
+
+      // Calcular porcentaje de ganancia/pérdida
+      if (currentInvestment > 0) {
+        pnlPercentage = (unrealizedPnL / currentInvestment) * 100;
       }
     }
 
@@ -152,6 +191,8 @@ export class OperationsService {
       currentQty,
       avgBuyPrice,
       unrealizedPnL,
+      pnlPercentage,
+      currentInvestment,
       buyQty,
       sellQty,
     };

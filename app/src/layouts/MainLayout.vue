@@ -58,6 +58,16 @@ const account = computed(() => accountStore.currentAccount);
 
 const linksList: EssentialLinkProps[] = [
   {
+    title: 'Operaciones',
+    icon: 'trending_up',
+    route_name: 'operations',
+  },
+  {
+    title: 'Símbolos',
+    icon: 'inventory_2',
+    route_name: 'symbols',
+  },
+  {
     title: 'Transacciones',
     icon: 'sync_alt',
     route_name: 'transactions',
