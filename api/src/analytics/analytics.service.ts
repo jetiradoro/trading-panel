@@ -6,6 +6,9 @@ import {
   SymbolPerformanceDto,
   ProductDistributionDto,
   PortfolioPointDto,
+  MonthlyPerformanceDto,
+  EquityPointDto,
+  RiskMetricsDto,
   DashboardResponseDto,
 } from './dto/dashboard.dto';
 
@@ -371,21 +374,26 @@ export class AnalyticsService {
       dateFrom ||
       new Date(new Date().setFullYear(new Date().getFullYear() - 1));
 
-    // Obtener todas las entradas en el periodo
-    const entries = await this.prisma.operation_entries.findMany({
+    // Obtener todas las operaciones con sus entradas y precios históricos
+    const operations = await this.prisma.operations.findMany({
       where: {
-        operation: {
-          userId,
-          ...(accountId && { accountId }),
-        },
-        date: { gte: startDate },
+        userId,
+        ...(accountId && { accountId }),
       },
       include: {
-        operation: {
-          include: { symbol: true },
+        entries: {
+          where: { date: { gte: startDate } },
+          orderBy: { date: 'asc' },
+        },
+        symbol: {
+          include: {
+            priceHistory: {
+              where: { date: { gte: startDate } },
+              orderBy: { date: 'asc' },
+            },
+          },
         },
       },
-      orderBy: { date: 'asc' },
     });
 
     // Generar puntos por día/semana según periodo
@@ -395,34 +403,280 @@ export class AnalyticsService {
     const now = new Date();
 
     let currentDate = new Date(startDate);
-    let runningInvested = 0;
 
     while (currentDate <= now) {
       const dateStr = currentDate.toISOString().split('T')[0];
+      let totalInvested = 0;
+      let portfolioValue = 0;
 
-      // Sumar entradas hasta esta fecha
-      for (const entry of entries) {
-        if (new Date(entry.date) <= currentDate && !entry['counted']) {
-          if (entry.entryType === 'buy') {
-            runningInvested += Number(entry.quantity) * Number(entry.price);
-          } else {
-            runningInvested -= Number(entry.quantity) * Number(entry.price);
-          }
-          entry['counted'] = true;
+      // Para cada operación, calcular inversión y valor a esta fecha
+      for (const op of operations) {
+        // Obtener entradas hasta esta fecha
+        const relevantEntries = op.entries.filter(
+          (e) => new Date(e.date) <= currentDate,
+        );
+
+        if (relevantEntries.length === 0) continue;
+
+        // Calcular cantidades y costes
+        const buyEntries = relevantEntries.filter((e) => e.entryType === 'buy');
+        const sellEntries = relevantEntries.filter(
+          (e) => e.entryType === 'sell',
+        );
+
+        const buyQty = buyEntries.reduce(
+          (sum, e) => sum + Number(e.quantity),
+          0,
+        );
+        const sellQty = sellEntries.reduce(
+          (sum, e) => sum + Number(e.quantity),
+          0,
+        );
+        const currentQty = buyQty - sellQty;
+
+        if (currentQty <= 0) continue;
+
+        // Calcular inversión (coste de compra - ingresos por venta)
+        const buyTotal = buyEntries.reduce(
+          (sum, e) => sum + Number(e.quantity) * Number(e.price),
+          0,
+        );
+        const sellTotal = sellEntries.reduce(
+          (sum, e) => sum + Number(e.quantity) * Number(e.price),
+          0,
+        );
+        totalInvested += buyTotal - sellTotal;
+
+        // Obtener precio de mercado más cercano a esta fecha
+        const priceAtDate = op.symbol?.priceHistory
+          .filter((p) => new Date(p.date) <= currentDate)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+        if (priceAtDate) {
+          portfolioValue += currentQty * Number(priceAtDate.price);
+        } else {
+          // Si no hay precio histórico, usar precio de compra promedio
+          const avgBuyPrice = buyQty > 0 ? buyTotal / buyQty : 0;
+          portfolioValue += currentQty * avgBuyPrice;
         }
       }
 
+      const pnl = portfolioValue - totalInvested;
+
       points.push({
         date: dateStr,
-        totalInvested: runningInvested,
-        portfolioValue: runningInvested, // Simplificado, sin valoración de mercado
-        pnl: 0,
+        totalInvested,
+        portfolioValue,
+        pnl,
       });
 
       currentDate.setDate(currentDate.getDate() + interval);
     }
 
     return points;
+  }
+
+  /**
+   * Análisis mensual de rendimiento
+   */
+  async getMonthlyPerformance(
+    userId: string,
+    accountId?: string,
+  ): Promise<MonthlyPerformanceDto[]> {
+    const operations = await this.prisma.operations.findMany({
+      where: {
+        userId,
+        status: 'closed',
+        ...(accountId && { accountId }),
+      },
+      orderBy: { updatedAt: 'asc' },
+    });
+
+    const monthsMap = new Map<string, MonthlyPerformanceDto>();
+
+    for (const op of operations) {
+      const date = new Date(op.updatedAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+      let data = monthsMap.get(monthKey);
+      if (!data) {
+        data = {
+          month: monthNames[date.getMonth()],
+          year: date.getFullYear(),
+          pnl: 0,
+          pnlPercentage: 0,
+          operationsClosed: 0,
+          winRate: 0,
+        };
+        monthsMap.set(monthKey, data);
+      }
+
+      data.pnl += op.balance || 0;
+      data.operationsClosed++;
+    }
+
+    const result = Array.from(monthsMap.values());
+    for (const month of result) {
+      const monthOps = operations.filter(op => {
+        const date = new Date(op.updatedAt);
+        return date.getFullYear() === month.year &&
+               date.getMonth() === ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].indexOf(month.month);
+      });
+      const wins = monthOps.filter(op => (op.balance || 0) > 0).length;
+      month.winRate = monthOps.length > 0 ? (wins / monthOps.length) * 100 : 0;
+    }
+
+    return result;
+  }
+
+  /**
+   * Curva de equity (evolución del capital)
+   */
+  async getEquityCurve(
+    userId: string,
+    period: string,
+    accountId?: string,
+  ): Promise<EquityPointDto[]> {
+    const dateFrom = this.getDateFromPeriod(period);
+    const startDate = dateFrom || new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+
+    const transactions = await this.prisma.transactions.findMany({
+      where: {
+        userId,
+        ...(accountId && { accountId }),
+        date: { gte: startDate },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    const closedOps = await this.prisma.operations.findMany({
+      where: {
+        userId,
+        status: 'closed',
+        ...(accountId && { accountId }),
+        updatedAt: { gte: startDate },
+      },
+      orderBy: { updatedAt: 'asc' },
+    });
+
+    const interval = period === '7d' ? 1 : period === '30d' ? 1 : period === '90d' ? 7 : 30;
+    const points: EquityPointDto[] = [];
+    const now = new Date();
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= now) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+
+      const transactionsUntilNow = transactions
+        .filter(t => new Date(t.date) <= currentDate)
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const depositsUntilNow = transactions
+        .filter(t => Number(t.amount) > 0 && new Date(t.date) <= currentDate)
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const withdrawalsUntilNow = Math.abs(transactions
+        .filter(t => Number(t.amount) < 0 && new Date(t.date) <= currentDate)
+        .reduce((sum, t) => sum + Number(t.amount), 0));
+
+      const pnlUntilNow = closedOps
+        .filter(op => new Date(op.updatedAt) <= currentDate)
+        .reduce((sum, op) => sum + (op.balance || 0), 0);
+
+      const equity = transactionsUntilNow + pnlUntilNow;
+
+      points.push({
+        date: dateStr,
+        equity,
+        deposits: depositsUntilNow,
+        withdrawals: withdrawalsUntilNow,
+        pnl: pnlUntilNow,
+      });
+
+      currentDate.setDate(currentDate.getDate() + interval);
+    }
+
+    return points;
+  }
+
+  /**
+   * Métricas de riesgo avanzadas
+   */
+  async getRiskMetrics(
+    userId: string,
+    period: string,
+    accountId?: string,
+  ): Promise<RiskMetricsDto> {
+    const dateFrom = this.getDateFromPeriod(period);
+
+    const closedOps = await this.prisma.operations.findMany({
+      where: {
+        userId,
+        status: 'closed',
+        ...(accountId && { accountId }),
+        ...(dateFrom && { updatedAt: { gte: dateFrom } }),
+      },
+    });
+
+    if (closedOps.length === 0) {
+      return {
+        sharpeRatio: 0,
+        maxDrawdown: 0,
+        maxDrawdownPercentage: 0,
+        profitFactor: 0,
+        avgWin: 0,
+        avgLoss: 0,
+        largestWin: 0,
+        largestLoss: 0,
+      };
+    }
+
+    const wins = closedOps.filter(op => (op.balance || 0) > 0);
+    const losses = closedOps.filter(op => (op.balance || 0) < 0);
+
+    const totalWins = wins.reduce((sum, op) => sum + (op.balance || 0), 0);
+    const totalLosses = Math.abs(losses.reduce((sum, op) => sum + (op.balance || 0), 0));
+
+    const avgWin = wins.length > 0 ? totalWins / wins.length : 0;
+    const avgLoss = losses.length > 0 ? totalLosses / losses.length : 0;
+
+    const largestWin = wins.length > 0 ? Math.max(...wins.map(op => op.balance || 0)) : 0;
+    const largestLoss = losses.length > 0 ? Math.abs(Math.min(...losses.map(op => op.balance || 0))) : 0;
+
+    const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? 999 : 0;
+
+    const returns = closedOps.map(op => op.balance || 0);
+    const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const stdDev = Math.sqrt(variance);
+    const sharpeRatio = stdDev > 0 ? avgReturn / stdDev : 0;
+
+    let equity = 0;
+    let peak = 0;
+    let maxDrawdown = 0;
+    let maxDrawdownPercentage = 0;
+
+    for (const op of closedOps.sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime())) {
+      equity += op.balance || 0;
+      if (equity > peak) peak = equity;
+      const drawdown = peak - equity;
+      if (drawdown > maxDrawdown) {
+        maxDrawdown = drawdown;
+        maxDrawdownPercentage = peak > 0 ? (drawdown / peak) * 100 : 0;
+      }
+    }
+
+    return {
+      sharpeRatio,
+      maxDrawdown,
+      maxDrawdownPercentage,
+      profitFactor,
+      avgWin,
+      avgLoss,
+      largestWin,
+      largestLoss,
+    };
   }
 
   /**
@@ -439,12 +693,18 @@ export class AnalyticsService {
       symbolsRanking,
       productDistribution,
       portfolioEvolution,
+      monthlyPerformance,
+      equityCurve,
+      riskMetrics,
     ] = await Promise.all([
       this.getAccountBalance(userId, accountId),
       this.getPerformance(userId, period, accountId),
       this.getSymbolsRanking(userId, period, accountId),
       this.getProductDistribution(userId, accountId),
       this.getPortfolioEvolution(userId, period, accountId),
+      this.getMonthlyPerformance(userId, accountId),
+      this.getEquityCurve(userId, period, accountId),
+      this.getRiskMetrics(userId, period, accountId),
     ]);
 
     return {
@@ -453,6 +713,9 @@ export class AnalyticsService {
       symbolsRanking,
       productDistribution,
       portfolioEvolution,
+      monthlyPerformance,
+      equityCurve,
+      riskMetrics,
       lastUpdated: new Date().toISOString(),
     };
   }

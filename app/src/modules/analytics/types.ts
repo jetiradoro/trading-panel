@@ -49,12 +49,43 @@ export interface PortfolioPointDto {
   pnl: number;
 }
 
+export interface MonthlyPerformanceDto {
+  month: string;
+  year: number;
+  pnl: number;
+  pnlPercentage: number;
+  operationsClosed: number;
+  winRate: number;
+}
+
+export interface EquityPointDto {
+  date: string;
+  equity: number;
+  deposits: number;
+  withdrawals: number;
+  pnl: number;
+}
+
+export interface RiskMetricsDto {
+  sharpeRatio: number;
+  maxDrawdown: number;
+  maxDrawdownPercentage: number;
+  profitFactor: number;
+  avgWin: number;
+  avgLoss: number;
+  largestWin: number;
+  largestLoss: number;
+}
+
 export interface DashboardResponseDto {
   accountBalance: AccountBalanceDto;
   performance: PerformanceDto;
   symbolsRanking: SymbolPerformanceDto[];
   productDistribution: ProductDistributionDto[];
   portfolioEvolution: PortfolioPointDto[];
+  monthlyPerformance: MonthlyPerformanceDto[];
+  equityCurve: EquityPointDto[];
+  riskMetrics: RiskMetricsDto;
   lastUpdated: string;
 }
 

@@ -2,7 +2,7 @@
   <q-card flat bordered>
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
-        <div class="text-h6">Evolución del Portfolio</div>
+        <div class="text-h6">Curva de Equity</div>
         <q-btn
           icon="info"
           flat
@@ -21,7 +21,7 @@
       </div>
       <apexchart
         v-else
-        type="area"
+        type="line"
         height="300"
         :options="chartOptions"
         :series="series"
@@ -30,7 +30,7 @@
 
     <info-modal
       v-model="showInfo"
-      title="Evolución del Portfolio"
+      title="Curva de Equity"
       :content="infoContent"
     />
   </q-card>
@@ -39,15 +39,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import InfoModal from './InfoModal.vue';
-import type { PortfolioPointDto } from '../types';
+import type { EquityPointDto } from '../types';
 
 /**
- * Gráfico de evolución del portfolio
- * Muestra la evolución temporal del dinero invertido vs valor del portfolio
+ * Gráfico de curva de equity
+ * Muestra la evolución del equity (balance + posiciones abiertas) y drawdown
  */
 
 interface Props {
-  data?: PortfolioPointDto[];
+  data?: EquityPointDto[];
   loading?: boolean;
 }
 
@@ -60,17 +60,19 @@ const showInfo = ref(false);
 
 const infoContent = `
 <p><strong>¿Qué muestra este gráfico?</strong></p>
-<p>Este gráfico compara dos métricas clave de tu portfolio a lo largo del tiempo:</p>
+<p>La curva de equity es una métrica fundamental en trading que muestra:</p>
 <ul>
-  <li><strong>Invertido (azul):</strong> El dinero que has invertido (compras - ventas).</li>
-  <li><strong>Valor Portfolio (verde):</strong> El valor actual de mercado de tus inversiones.</li>
+  <li><strong>Equity (verde):</strong> Capital total (depósitos + P&L acumulado).</li>
+  <li><strong>Depósitos (azul):</strong> Dinero aportado a la cuenta.</li>
+  <li><strong>Retiros (naranja):</strong> Dinero retirado de la cuenta.</li>
 </ul>
 <p><strong>¿Cómo leerlo?</strong></p>
 <ul>
-  <li>Si la línea verde está <strong>por encima</strong> de la azul → Estás en ganancias</li>
-  <li>Si está <strong>por debajo</strong> → Estás en pérdidas</li>
-  <li>La separación entre líneas muestra la magnitud del P&L</li>
+  <li>Equity <strong>por encima</strong> de depósitos → Rentabilidad positiva</li>
+  <li>Equity <strong>por debajo</strong> de depósitos → Pérdidas acumuladas</li>
+  <li>Pendiente ascendente suave → Trading consistente y saludable</li>
 </ul>
+<p><strong>Utilidad:</strong> Evalúa la salud general de tu estrategia y gestión de riesgo.</p>
 `;
 
 /**
@@ -83,17 +85,27 @@ const series = computed(() => {
 
   return [
     {
-      name: 'Invertido',
+      name: 'Equity',
+      type: 'line',
       data: props.data.map((p) => ({
         x: new Date(p.date).getTime(),
-        y: p.totalInvested,
+        y: p.equity,
       })),
     },
     {
-      name: 'Valor Portfolio',
+      name: 'Depósitos',
+      type: 'line',
       data: props.data.map((p) => ({
         x: new Date(p.date).getTime(),
-        y: p.portfolioValue,
+        y: p.deposits,
+      })),
+    },
+    {
+      name: 'Retiros',
+      type: 'area',
+      data: props.data.map((p) => ({
+        x: new Date(p.date).getTime(),
+        y: -p.withdrawals,
       })),
     },
   ];
@@ -104,7 +116,7 @@ const series = computed(() => {
  */
 const chartOptions = computed(() => ({
   chart: {
-    type: 'area',
+    type: 'line',
     toolbar: {
       show: false,
     },
@@ -112,18 +124,18 @@ const chartOptions = computed(() => ({
       enabled: false,
     },
   },
-  colors: ['#1976D2', '#21BA45'],
+  colors: ['#21BA45', '#1976D2', '#C10015'],
   dataLabels: {
     enabled: false,
   },
   stroke: {
     curve: 'smooth',
-    width: 2,
+    width: [2, 2, 0],
   },
   fill: {
-    type: 'gradient',
+    type: ['solid', 'solid', 'gradient'],
     gradient: {
-      opacityFrom: 0.6,
+      opacityFrom: 0.4,
       opacityTo: 0.1,
     },
   },
@@ -132,20 +144,50 @@ const chartOptions = computed(() => ({
     labels: {
       datetimeUTC: false,
       format: 'dd MMM',
-    },
-  },
-  yaxis: {
-    labels: {
-      formatter: (value: number) => {
-        return new Intl.NumberFormat('es-ES', {
-          style: 'currency',
-          currency: 'EUR',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(value);
+      style: {
+        colors: '#FFFFFF',
       },
     },
   },
+  yaxis: [
+    {
+      seriesName: 'Equity',
+      labels: {
+        style: {
+          colors: '#FFFFFF',
+        },
+        formatter: (value: number) => {
+          return new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: 'EUR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }).format(value);
+        },
+      },
+    },
+    {
+      seriesName: 'Equity',
+      show: false,
+    },
+    {
+      opposite: true,
+      seriesName: 'Drawdown',
+      labels: {
+        style: {
+          colors: '#FFFFFF',
+        },
+        formatter: (value: number) => {
+          return new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: 'EUR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }).format(value);
+        },
+      },
+    },
+  ],
   tooltip: {
     theme: 'dark',
     x: {

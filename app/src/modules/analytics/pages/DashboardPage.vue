@@ -59,6 +59,33 @@
       />
     </div>
 
+    <!-- Métricas de riesgo -->
+    <div class="q-mb-lg">
+      <risk-metrics-cards
+        :data="riskMetrics ?? undefined"
+        :loading="loadingAdvanced"
+      />
+    </div>
+
+    <!-- Gráficos avanzados -->
+    <div class="row q-col-gutter-md q-mb-lg">
+      <!-- Rendimiento mensual -->
+      <div class="col-12 col-md-6">
+        <monthly-performance-chart
+          :data="monthlyPerformance || []"
+          :loading="loadingAdvanced"
+        />
+      </div>
+
+      <!-- Curva de equity -->
+      <div class="col-12 col-md-6">
+        <equity-curve-chart
+          :data="equityCurve || []"
+          :loading="loadingAdvanced"
+        />
+      </div>
+    </div>
+
     <!-- Ranking de símbolos -->
     <symbol-ranking-table
       v-if="symbolsRanking && symbolsRanking.length > 0"
@@ -84,6 +111,9 @@ import PerformanceSummary from '../components/PerformanceSummary.vue';
 import SymbolRankingTable from '../components/SymbolRankingTable.vue';
 import PortfolioEvolutionChart from '../components/PortfolioEvolutionChart.vue';
 import ProductDistributionChart from '../components/ProductDistributionChart.vue';
+import MonthlyPerformanceChart from '../components/MonthlyPerformanceChart.vue';
+import EquityCurveChart from '../components/EquityCurveChart.vue';
+import RiskMetricsCards from '../components/RiskMetricsCards.vue';
 import PeriodFilter from '../components/PeriodFilter.vue';
 import { useAnalyticsStore } from '../AnalyticsStore';
 
@@ -99,7 +129,11 @@ const {
   symbolsRanking,
   productDistribution,
   portfolioEvolution,
+  monthlyPerformance,
+  equityCurve,
+  riskMetrics,
   loadingCharts,
+  loadingAdvanced,
 } = storeToRefs(store);
 
 /**

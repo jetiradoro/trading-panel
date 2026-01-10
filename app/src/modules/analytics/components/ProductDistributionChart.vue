@@ -1,7 +1,18 @@
 <template>
   <q-card flat bordered>
     <q-card-section>
-      <div class="text-h6 q-mb-sm">Distribución por Producto</div>
+      <div class="row items-center justify-between q-mb-sm">
+        <div class="text-h6">Distribución por Producto</div>
+        <q-btn
+          icon="info"
+          flat
+          dense
+          round
+          size="sm"
+          color="grey-6"
+          @click="showInfo = true"
+        />
+      </div>
       <div v-if="loading" class="row justify-center q-pa-lg">
         <q-spinner color="primary" size="50px" />
       </div>
@@ -39,11 +50,18 @@
         </div>
       </div>
     </q-card-section>
+
+    <info-modal
+      v-model="showInfo"
+      title="Distribución por Producto"
+      :content="infoContent"
+    />
   </q-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import InfoModal from './InfoModal.vue';
 import type { ProductDistributionDto } from '../types';
 
 /**
@@ -60,6 +78,20 @@ const props = withDefaults(defineProps<Props>(), {
   data: () => [],
   loading: false,
 });
+
+const showInfo = ref(false);
+
+const infoContent = `
+<p><strong>¿Qué muestra este gráfico?</strong></p>
+<p>Distribución de tu inversión actual entre diferentes tipos de productos:</p>
+<ul>
+  <li><strong>Criptos</strong> (naranja): Criptomonedas (BTC, ETH, etc.)</li>
+  <li><strong>Acciones</strong> (azul): Acciones de empresas</li>
+  <li><strong>ETFs</strong> (verde): Fondos cotizados</li>
+</ul>
+<p><strong>¿Cómo leerlo?</strong></p>
+<p>Muestra el porcentaje y valor invertido en cada categoría. Útil para diversificación y gestión de riesgo.</p>
+`;
 
 /**
  * Colores por tipo de producto según plan

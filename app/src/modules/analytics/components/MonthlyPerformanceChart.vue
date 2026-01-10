@@ -2,7 +2,7 @@
   <q-card flat bordered>
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
-        <div class="text-h6">Evolución del Portfolio</div>
+        <div class="text-h6">Rendimiento Mensual</div>
         <q-btn
           icon="info"
           flat
@@ -21,7 +21,7 @@
       </div>
       <apexchart
         v-else
-        type="area"
+        type="bar"
         height="300"
         :options="chartOptions"
         :series="series"
@@ -30,7 +30,7 @@
 
     <info-modal
       v-model="showInfo"
-      title="Evolución del Portfolio"
+      title="Rendimiento Mensual"
       :content="infoContent"
     />
   </q-card>
@@ -39,15 +39,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import InfoModal from './InfoModal.vue';
-import type { PortfolioPointDto } from '../types';
+import type { MonthlyPerformanceDto } from '../types';
 
 /**
- * Gráfico de evolución del portfolio
- * Muestra la evolución temporal del dinero invertido vs valor del portfolio
+ * Gráfico de rendimiento mensual
+ * Muestra P&L realizado y no realizado por mes
  */
 
 interface Props {
-  data?: PortfolioPointDto[];
+  data?: MonthlyPerformanceDto[];
   loading?: boolean;
 }
 
@@ -60,17 +60,18 @@ const showInfo = ref(false);
 
 const infoContent = `
 <p><strong>¿Qué muestra este gráfico?</strong></p>
-<p>Este gráfico compara dos métricas clave de tu portfolio a lo largo del tiempo:</p>
+<p>Este gráfico desglosa tu rendimiento mes a mes mostrando:</p>
 <ul>
-  <li><strong>Invertido (azul):</strong> El dinero que has invertido (compras - ventas).</li>
-  <li><strong>Valor Portfolio (verde):</strong> El valor actual de mercado de tus inversiones.</li>
+  <li><strong>P&L Mensual:</strong> Resultado total de operaciones cerradas en cada mes.</li>
+  <li><strong>Win Rate:</strong> Porcentaje de operaciones ganadoras por mes.</li>
 </ul>
 <p><strong>¿Cómo leerlo?</strong></p>
 <ul>
-  <li>Si la línea verde está <strong>por encima</strong> de la azul → Estás en ganancias</li>
-  <li>Si está <strong>por debajo</strong> → Estás en pérdidas</li>
-  <li>La separación entre líneas muestra la magnitud del P&L</li>
+  <li>Barras hacia <strong>arriba</strong> → Ganancias en ese mes</li>
+  <li>Barras hacia <strong>abajo</strong> → Pérdidas en ese mes</li>
+  <li>La altura muestra la magnitud del resultado mensual</li>
 </ul>
+<p><strong>Utilidad:</strong> Identifica patrones estacionales o rachas de rendimiento.</p>
 `;
 
 /**
@@ -83,18 +84,8 @@ const series = computed(() => {
 
   return [
     {
-      name: 'Invertido',
-      data: props.data.map((p) => ({
-        x: new Date(p.date).getTime(),
-        y: p.totalInvested,
-      })),
-    },
-    {
-      name: 'Valor Portfolio',
-      data: props.data.map((p) => ({
-        x: new Date(p.date).getTime(),
-        y: p.portfolioValue,
-      })),
+      name: 'P&L',
+      data: props.data.map((p) => p.pnl),
     },
   ];
 });
@@ -104,38 +95,46 @@ const series = computed(() => {
  */
 const chartOptions = computed(() => ({
   chart: {
-    type: 'area',
+    type: 'bar',
     toolbar: {
       show: false,
     },
-    zoom: {
-      enabled: false,
+  },
+  colors: ['#1976D2'],
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: '70%',
+      colors: {
+        ranges: [{
+          from: -Infinity,
+          to: 0,
+          color: '#C10015'
+        }]
+      }
     },
   },
-  colors: ['#1976D2', '#21BA45'],
   dataLabels: {
     enabled: false,
   },
   stroke: {
-    curve: 'smooth',
+    show: true,
     width: 2,
-  },
-  fill: {
-    type: 'gradient',
-    gradient: {
-      opacityFrom: 0.6,
-      opacityTo: 0.1,
-    },
+    colors: ['transparent'],
   },
   xaxis: {
-    type: 'datetime',
+    categories: props.data?.map((p) => `${p.month} ${p.year}`) || [],
     labels: {
-      datetimeUTC: false,
-      format: 'dd MMM',
+      style: {
+        colors: '#FFFFFF',
+      },
     },
   },
   yaxis: {
     labels: {
+      style: {
+        colors: '#FFFFFF',
+      },
       formatter: (value: number) => {
         return new Intl.NumberFormat('es-ES', {
           style: 'currency',
@@ -148,9 +147,6 @@ const chartOptions = computed(() => ({
   },
   tooltip: {
     theme: 'dark',
-    x: {
-      format: 'dd MMM yyyy',
-    },
     y: {
       formatter: (value: number) => {
         return new Intl.NumberFormat('es-ES', {
@@ -171,6 +167,9 @@ const chartOptions = computed(() => ({
   },
   grid: {
     borderColor: '#e0e0e0',
+  },
+  fill: {
+    opacity: 1,
   },
 }));
 </script>

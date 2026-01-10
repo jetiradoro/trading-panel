@@ -1,7 +1,19 @@
 <template>
   <q-card flat bordered class="kpi-card">
     <q-card-section>
-      <div class="text-overline text-grey-7">{{ label }}</div>
+      <div class="row items-center justify-between q-mb-xs">
+        <div class="text-overline text-grey-7">{{ label }}</div>
+        <q-btn
+          v-if="infoTitle"
+          icon="info"
+          flat
+          dense
+          round
+          size="sm"
+          color="grey-6"
+          @click="showInfo = true"
+        />
+      </div>
       <div class="row items-baseline q-mt-sm">
         <div class="text-h5 text-weight-bold">{{ formattedValue }}</div>
         <div
@@ -16,11 +28,19 @@
         {{ subtitle }}
       </div>
     </q-card-section>
+
+    <info-modal
+      v-if="infoTitle"
+      v-model="showInfo"
+      :title="infoTitle"
+      :content="infoContent || ''"
+    />
   </q-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import InfoModal from './InfoModal.vue';
 
 /**
  * Componente de tarjeta KPI reutilizable
@@ -32,12 +52,16 @@ interface Props {
   change?: number;
   subtitle?: string;
   currency?: string;
+  infoTitle?: string;
+  infoContent?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   format: 'currency',
   currency: 'EUR',
 });
+
+const showInfo = ref(false);
 
 const formattedValue = computed(() => {
   switch (props.format) {

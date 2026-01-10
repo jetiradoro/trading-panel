@@ -1,7 +1,18 @@
 <template>
   <q-card flat bordered class="performance-summary">
     <q-card-section>
-      <div class="text-h6 q-mb-md">Rendimiento Global</div>
+      <div class="row items-center justify-between q-mb-md">
+        <div class="text-h6">Rendimiento Global</div>
+        <q-btn
+          icon="info"
+          flat
+          dense
+          round
+          size="sm"
+          color="grey-6"
+          @click="showInfo = true"
+        />
+      </div>
 
       <!-- P&L Total -->
       <div class="row items-baseline q-mb-md">
@@ -60,11 +71,18 @@
         </div>
       </div>
     </q-card-section>
+
+    <info-modal
+      v-model="showInfo"
+      title="Rendimiento Global"
+      :content="infoContent"
+    />
   </q-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import InfoModal from './InfoModal.vue';
 import type { PerformanceDto } from '../types';
 
 /**
@@ -75,6 +93,20 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const showInfo = ref(false);
+
+const infoContent = `
+<p><strong>¿Qué muestra este widget?</strong></p>
+<ul>
+  <li><strong>P&L Total:</strong> Ganancia/Pérdida total (realizada + no realizada)</li>
+  <li><strong>P&L Realizado:</strong> Ganancias/pérdidas de operaciones cerradas</li>
+  <li><strong>P&L No Realizado:</strong> Ganancias/pérdidas potenciales de operaciones abiertas</li>
+  <li><strong>Win Rate:</strong> Porcentaje de operaciones ganadoras</li>
+</ul>
+<p><strong>Interpretación:</strong></p>
+<p>Verde = ganancias, Rojo = pérdidas. Un win rate > 50% indica más aciertos que fallos.</p>
+`;
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('es-ES', {

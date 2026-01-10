@@ -42,4 +42,19 @@ export class AnalyticsController {
   getPortfolioEvolution(@AppClient() user: users, @Query() query: AnalyticsQueryDto) {
     return this.service.getPortfolioEvolution(user.id, query.period || '30d', query.accountId);
   }
+
+  @Get('monthly-performance')
+  getMonthlyPerformance(@AppClient() user: users, @Query() query: AnalyticsQueryDto) {
+    return this.service.getMonthlyPerformance(user.id, query.accountId);
+  }
+
+  @Get('equity-curve')
+  getEquityCurve(@AppClient() user: users, @Query() query: AnalyticsQueryDto) {
+    return this.service.getEquityCurve(user.id, query.period || '30d', query.accountId);
+  }
+
+  @Get('risk-metrics')
+  getRiskMetrics(@AppClient() user: users, @Query() query: AnalyticsQueryDto) {
+    return this.service.getRiskMetrics(user.id, query.period || '30d', query.accountId);
+  }
 }

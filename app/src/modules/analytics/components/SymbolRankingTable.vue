@@ -3,8 +3,19 @@
     <q-card-section>
       <div class="row items-center justify-between q-mb-md">
         <div class="text-h6">Ranking de Símbolos</div>
-        <div class="text-caption text-grey-7">
-          Top {{ topSymbols.length }} de {{ symbols.length }}
+        <div class="row items-center q-gutter-sm">
+          <div class="text-caption text-grey-7">
+            Top {{ topSymbols.length }} de {{ symbols.length }}
+          </div>
+          <q-btn
+            icon="info"
+            flat
+            dense
+            round
+            size="sm"
+            color="grey-6"
+            @click="showInfo = true"
+          />
         </div>
       </div>
 
@@ -37,11 +48,18 @@
         <div>No hay datos de símbolos disponibles</div>
       </div>
     </q-card-section>
+
+    <info-modal
+      v-model="showInfo"
+      title="Ranking de Símbolos"
+      :content="infoContent"
+    />
   </q-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import InfoModal from './InfoModal.vue';
 import SymbolRankingItem from './SymbolRankingItem.vue';
 import type { SymbolPerformanceDto } from '../types';
 
@@ -56,6 +74,21 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   limit: 10,
 });
+
+const showInfo = ref(false);
+
+const infoContent = `
+<p><strong>¿Qué muestra esta tabla?</strong></p>
+<p>Ranking de tus símbolos ordenados por P&L total (ganancias/pérdidas).</p>
+<p><strong>Columnas:</strong></p>
+<ul>
+  <li><strong>Invertido:</strong> Dinero actual en ese símbolo</li>
+  <li><strong>P&L:</strong> Ganancia/pérdida total (realizada + no realizada)</li>
+  <li><strong>%:</strong> Porcentaje de retorno sobre lo invertido</li>
+  <li><strong>Tendencia:</strong> Sparkline de precios recientes</li>
+</ul>
+<p><strong>Utilidad:</strong> Identificar qué activos te generan más rendimiento.</p>
+`;
 
 const topSymbols = computed(() => {
   return props.symbols.slice(0, props.limit);

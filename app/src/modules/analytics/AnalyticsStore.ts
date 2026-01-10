@@ -8,6 +8,9 @@ import type {
   SymbolPerformanceDto,
   ProductDistributionDto,
   PortfolioPointDto,
+  MonthlyPerformanceDto,
+  EquityPointDto,
+  RiskMetricsDto,
   PeriodType,
 } from './types';
 
@@ -23,11 +26,15 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const symbolsRanking = ref<SymbolPerformanceDto[]>([]);
   const productDistribution = ref<ProductDistributionDto[]>([]);
   const portfolioEvolution = ref<PortfolioPointDto[]>([]);
+  const monthlyPerformance = ref<MonthlyPerformanceDto[]>([]);
+  const equityCurve = ref<EquityPointDto[]>([]);
+  const riskMetrics = ref<RiskMetricsDto | null>(null);
 
   const loadingBalance = ref(false);
   const loadingPerformance = ref(false);
   const loadingRanking = ref(false);
   const loadingCharts = ref(false);
+  const loadingAdvanced = ref(false);
   const error = ref<string | null>(null);
 
   /**
@@ -147,6 +154,78 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   }
 
   /**
+   * Carga el rendimiento mensual
+   */
+  async function loadMonthlyPerformance() {
+    try {
+      loadingAdvanced.value = true;
+      error.value = null;
+      const { data } = await api.get<MonthlyPerformanceDto[]>('/analytics/monthly-performance', {
+        params: { period: period.value },
+      });
+      monthlyPerformance.value = data;
+    } catch (err) {
+      console.error('Error al cargar rendimiento mensual:', err);
+      error.value = 'Error al cargar rendimiento mensual';
+      Notify.create({
+        type: 'negative',
+        message: 'Error al cargar rendimiento mensual',
+        position: 'top',
+      });
+    } finally {
+      loadingAdvanced.value = false;
+    }
+  }
+
+  /**
+   * Carga la curva de equity
+   */
+  async function loadEquityCurve() {
+    try {
+      loadingAdvanced.value = true;
+      error.value = null;
+      const { data } = await api.get<EquityPointDto[]>('/analytics/equity-curve', {
+        params: { period: period.value },
+      });
+      equityCurve.value = data;
+    } catch (err) {
+      console.error('Error al cargar curva de equity:', err);
+      error.value = 'Error al cargar curva de equity';
+      Notify.create({
+        type: 'negative',
+        message: 'Error al cargar curva de equity',
+        position: 'top',
+      });
+    } finally {
+      loadingAdvanced.value = false;
+    }
+  }
+
+  /**
+   * Carga las métricas de riesgo
+   */
+  async function loadRiskMetrics() {
+    try {
+      loadingAdvanced.value = true;
+      error.value = null;
+      const { data } = await api.get<RiskMetricsDto>('/analytics/risk-metrics', {
+        params: { period: period.value },
+      });
+      riskMetrics.value = data;
+    } catch (err) {
+      console.error('Error al cargar métricas de riesgo:', err);
+      error.value = 'Error al cargar métricas de riesgo';
+      Notify.create({
+        type: 'negative',
+        message: 'Error al cargar métricas de riesgo',
+        position: 'top',
+      });
+    } finally {
+      loadingAdvanced.value = false;
+    }
+  }
+
+  /**
    * Carga todos los datos del dashboard
    */
   async function loadDashboard() {
@@ -156,6 +235,9 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadSymbolsRanking(),
       loadProductDistribution(),
       loadPortfolioEvolution(),
+      loadMonthlyPerformance(),
+      loadEquityCurve(),
+      loadRiskMetrics(),
     ]);
   }
 
@@ -167,6 +249,9 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadPerformance(),
       loadSymbolsRanking(),
       loadPortfolioEvolution(),
+      loadMonthlyPerformance(),
+      loadEquityCurve(),
+      loadRiskMetrics(),
     ]);
   }
 
@@ -186,10 +271,14 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     symbolsRanking,
     productDistribution,
     portfolioEvolution,
+    monthlyPerformance,
+    equityCurve,
+    riskMetrics,
     loadingBalance,
     loadingPerformance,
     loadingRanking,
     loadingCharts,
+    loadingAdvanced,
     error,
 
     // Acciones
