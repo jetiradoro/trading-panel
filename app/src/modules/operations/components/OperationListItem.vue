@@ -1,54 +1,64 @@
 <template>
-  <q-slide-item class="operation-slide-item" @left="onSlideLeft" left-color="red-3">
-    <template #left>
-      <div class="slide-action bg-red-3 text-white row items-center justify-end rounded-borders">
-        <q-icon name="delete" size="sm" />
-      </div>
-    </template>
+  <div class="operation-item-wrapper">
+    <q-slide-item class="operation-slide-item" @left="onSlideLeft" left-color="red-3">
+      <template #left>
+        <div class="slide-action bg-red-3 text-white row items-center justify-end rounded-borders">
+          <q-icon name="delete" size="sm" />
+        </div>
+      </template>
 
-    <q-item clickable class="operation-item" @click="goToDetail">
-      <q-item-section avatar>
-        <q-avatar :color="statusColor" text-color="white" size="md">
-          <q-icon :name="productIcon" />
-        </q-avatar>
-      </q-item-section>
+      <q-item clickable class="operation-item" @click="goToDetail">
+        <q-item-section avatar>
+          <q-avatar v-if="operation.symbol?.logo" size="md">
+            <img :src="operation.symbol.logo" :alt="operation.symbol.code" />
+          </q-avatar>
+          <q-avatar v-else :color="statusColor" text-color="white" size="md">
+            <q-icon :name="productIcon" />
+          </q-avatar>
+        </q-item-section>
 
-      <q-item-section>
-        <q-item-label>{{ operation.symbol?.code || 'N/A' }}</q-item-label>
-        <q-item-label caption>{{ operation.symbol?.name || 'N/A' }}</q-item-label>
-      </q-item-section>
+        <q-item-section>
+          <q-item-label>{{ operation.symbol?.code || 'N/A' }}</q-item-label>
+          <q-item-label caption>{{ operation.symbol?.name || 'N/A' }}</q-item-label>
+        </q-item-section>
 
-      <q-item-section>
-        <q-item-label>
-          <q-badge :color="typeColor" :label="typeLabel" />
-        </q-item-label>
-        <q-item-label caption>{{ formatDate(firstEntryDate) }}</q-item-label>
-      </q-item-section>
+        <q-item-section>
+          <q-item-label>
+            <q-badge :color="typeColor" :label="typeLabel" />
+          </q-item-label>
+          <q-item-label caption>{{ formatDate(firstEntryDate) }}</q-item-label>
+        </q-item-section>
 
-      <q-item-section side>
-        <q-item-label v-if="operation.status === 'closed' && operation.balance !== undefined">
-          <span :class="operation.balance >= 0 ? 'text-positive' : 'text-negative'">
-            {{ operation.balance.toFixed(2) }} €
-          </span>
-        </q-item-label>
-        <q-item-label v-else-if="operation.metrics?.unrealizedPnL !== undefined && operation.metrics?.unrealizedPnL !== null">
-          <span :class="operation.metrics.unrealizedPnL >= 0 ? 'text-positive' : 'text-negative'">
-            {{ operation.metrics.unrealizedPnL.toFixed(2) }} €
-          </span>
-        </q-item-label>
-        <q-item-label v-if="pnlPercentageDisplay" caption>
-          <span :class="pnlPercentageDisplay.className">
-            {{ pnlPercentageDisplay.text }}
-          </span>
-        </q-item-label>
-        <q-item-label caption>
-          <q-chip :color="statusColor" text-color="white" dense size="sm">
-            {{ statusLabel }}
-          </q-chip>
-        </q-item-label>
-      </q-item-section>
-    </q-item>
-  </q-slide-item>
+        <q-item-section side>
+          <q-item-label v-if="operation.status === 'closed' && operation.balance !== undefined">
+            <span :class="operation.balance >= 0 ? 'text-positive' : 'text-negative'">
+              {{ operation.balance.toFixed(2) }} €
+            </span>
+          </q-item-label>
+          <q-item-label
+            v-else-if="
+              operation.metrics?.unrealizedPnL !== undefined &&
+              operation.metrics?.unrealizedPnL !== null
+            "
+          >
+            <span :class="operation.metrics.unrealizedPnL >= 0 ? 'text-positive' : 'text-negative'">
+              {{ operation.metrics.unrealizedPnL.toFixed(2) }} €
+            </span>
+          </q-item-label>
+          <q-item-label v-if="pnlPercentageDisplay" caption>
+            <span :class="pnlPercentageDisplay.className">
+              {{ pnlPercentageDisplay.text }}
+            </span>
+          </q-item-label>
+          <q-item-label caption>
+            <q-chip :color="statusColor" text-color="white" dense size="sm">
+              {{ statusLabel }}
+            </q-chip>
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+    </q-slide-item>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -80,6 +90,7 @@ interface Operation {
   symbol?: {
     code: string;
     name: string;
+    logo?: string;
   };
   metrics?: OperationMetrics;
   entries?: OperationEntry[];
@@ -172,19 +183,44 @@ const formatDate = (dateString: string) => {
 </script>
 
 <style scoped>
+.operation-item-wrapper {
+  margin-bottom: 0.2rem;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.operation-item-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
 .operation-slide-item {
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .operation-item {
   min-height: 72px;
   display: flex;
   align-items: center;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .slide-action {
   width: 100%;
   height: 100%;
   padding: 0 16px;
+}
+
+.q-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.text-negative {
+  color: #ff6b6b !important;
 }
 </style>

@@ -19,15 +19,34 @@
             :rules="[(val) => !!val || 'Campo requerido']"
           />
 
-          <q-input
-            v-model.number="entry.quantity"
-            type="number"
-            label="Cantidad"
-            outlined
-            dense
-            class="q-mb-md"
-            :rules="[(val) => val > 0 || 'Debe ser mayor que 0']"
-          />
+          <div class="q-mb-md">
+            <div class="row q-gutter-sm items-start">
+              <q-input
+                v-model.number="entry.quantity"
+                type="number"
+                label="Cantidad"
+                outlined
+                dense
+                class="col"
+                :rules="[(val) => val > 0 || 'Debe ser mayor que 0']"
+              />
+              <q-btn
+                v-if="entry.entryType === 'sell' && currentQuantity > 0"
+                flat
+                dense
+                label="Vender todas"
+                color="primary"
+                @click="sellAll"
+                class="q-mb-xs"
+              />
+            </div>
+            <div
+              v-if="entry.entryType === 'sell' && currentQuantity > 0"
+              class="text-caption text-grey-7 q-mt-xs"
+            >
+              Unidades disponibles: {{ currentQuantity }}
+            </div>
+          </div>
 
           <q-input
             v-model.number="entry.price"
@@ -58,13 +77,7 @@
 
           <div class="row q-gutter-sm justify-end">
             <q-btn flat label="Cancelar" color="grey" v-close-popup />
-            <q-btn
-              flat
-              type="submit"
-              label="Guardar"
-              color="primary"
-              :loading="saving"
-            />
+            <q-btn flat type="submit" label="Guardar" color="primary" :loading="saving" />
           </div>
         </q-form>
       </q-card-section>
@@ -115,6 +128,18 @@ const entry = ref<Entry>({
 
 const isEdit = computed(() => !!props.editEntry);
 
+// Obtener la cantidad actual de la operación
+const currentQuantity = computed(() => {
+  return operationsStore.currentOperation?.metrics?.currentQty ?? 0;
+});
+
+// Función para vender todas las unidades
+const sellAll = () => {
+  if (currentQuantity.value > 0) {
+    entry.value.quantity = currentQuantity.value;
+  }
+};
+
 // Cuando cambia editEntry, cargar los datos
 watch(
   () => props.editEntry,
@@ -141,7 +166,7 @@ watch(
       };
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const entryTypeOptions = entryTypes.map((e) => ({
@@ -154,11 +179,7 @@ const save = async () => {
 
   try {
     if (isEdit.value && entry.value.id) {
-      await operationsStore.updateEntry(
-        props.operationId,
-        entry.value.id,
-        entry.value
-      );
+      await operationsStore.updateEntry(props.operationId, entry.value.id, entry.value);
       $q.notify({
         type: 'positive',
         message: 'Entrada actualizada correctamente',

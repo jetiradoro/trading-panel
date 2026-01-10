@@ -19,43 +19,14 @@
       />
 
       <!-- Lista de símbolos -->
-      <q-list v-if="filteredSymbols.length > 0" bordered separator>
-        <q-item
+      <q-list v-if="filteredSymbols.length > 0">
+        <SymbolListItem
           v-for="symbol in filteredSymbols"
           :key="symbol.id"
-          clickable
+          :symbol="symbol"
           @click="editSymbol(symbol.id)"
-        >
-          <q-item-section avatar>
-            <q-avatar v-if="symbol.logo" size="md">
-              <img :src="symbol.logo" :alt="symbol.code" />
-            </q-avatar>
-            <q-avatar v-else :color="productColor(symbol.product)" text-color="white" size="md">
-              <q-icon :name="productIcon(symbol.product)" />
-            </q-avatar>
-          </q-item-section>
-
-          <q-item-section>
-            <q-item-label>{{ symbol.code }}</q-item-label>
-            <q-item-label caption>{{ symbol.name }}</q-item-label>
-          </q-item-section>
-
-          <q-item-section side>
-            <q-badge :color="productColor(symbol.product)" :label="productLabel(symbol.product)" />
-          </q-item-section>
-
-          <q-item-section side>
-            <q-btn
-              flat
-              dense
-              round
-              icon="delete"
-              color="negative"
-              size="sm"
-              @click.stop="handleDelete(symbol)"
-            />
-          </q-item-section>
-        </q-item>
+          @delete="handleDelete(symbol)"
+        />
       </q-list>
 
       <div v-else class="text-center q-pa-md text-grey">No hay símbolos disponibles</div>
@@ -75,6 +46,7 @@ import { useAppStore } from 'src/stores/app';
 import { useSymbolsStore } from '../SymbolsStore';
 import { products } from 'src/config';
 import { useQuasar } from 'quasar';
+import SymbolListItem from '../components/SymbolListItem.vue';
 
 const appStore = useAppStore();
 const symbolsStore = useSymbolsStore();
@@ -104,37 +76,6 @@ const filteredSymbols = computed(() => {
   if (!filterProduct.value) return symbolsStore.symbols;
   return symbolsStore.symbols.filter((s) => s.product === filterProduct.value);
 });
-
-const productLabel = (productCode: string) => {
-  const product = products.find((p) => p.code === productCode);
-  return product?.label || productCode;
-};
-
-const productColor = (productCode: string) => {
-  switch (productCode) {
-    case 'crypto':
-      return 'orange';
-    case 'stock':
-      return 'blue';
-    case 'etf':
-      return 'purple';
-    default:
-      return 'grey';
-  }
-};
-
-const productIcon = (productCode: string) => {
-  switch (productCode) {
-    case 'crypto':
-      return 'currency_bitcoin';
-    case 'stock':
-      return 'show_chart';
-    case 'etf':
-      return 'account_balance';
-    default:
-      return 'help';
-  }
-};
 
 const editSymbol = (symbolId: string) => {
   void router.push({ name: 'symbols.detail', params: { id: symbolId } });
