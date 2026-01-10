@@ -62,7 +62,7 @@
     <!-- Métricas de riesgo -->
     <div class="q-mb-lg">
       <risk-metrics-cards
-        :data="riskMetrics ?? undefined"
+        :data="riskMetrics"
         :loading="loadingAdvanced"
       />
     </div>

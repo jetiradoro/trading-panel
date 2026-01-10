@@ -28,7 +28,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const portfolioEvolution = ref<PortfolioPointDto[]>([]);
   const monthlyPerformance = ref<MonthlyPerformanceDto[]>([]);
   const equityCurve = ref<EquityPointDto[]>([]);
-  const riskMetrics = ref<RiskMetricsDto | null>(null);
+  const riskMetrics = ref<RiskMetricsDto | undefined>(undefined);
 
   const loadingBalance = ref(false);
   const loadingPerformance = ref(false);
