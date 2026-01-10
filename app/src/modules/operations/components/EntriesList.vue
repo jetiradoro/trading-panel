@@ -1,36 +1,39 @@
 <template>
-  <q-list v-if="entries.length > 0">
+  <q-list v-if="entries.length > 0" class="entries-list">
     <q-item
       v-for="entry in sortedEntries"
       :key="entry.id"
       clickable
+      class="entry-item"
       @click="emit('edit', entry)"
     >
-      <q-item-section avatar>
+      <q-item-section avatar class="entry-avatar">
         <q-avatar :color="entryTypeColor(entry.entryType)" text-color="white" size="md">
           <q-icon :name="entryTypeIcon(entry.entryType)" />
         </q-avatar>
       </q-item-section>
 
-      <q-item-section>
-        <q-item-label>{{ entryTypeLabel(entry.entryType) }}</q-item-label>
-        <q-item-label caption>{{ formatDate(entry.date) }}</q-item-label>
+      <q-item-section class="entry-content">
+        <div class="row items-center q-col-gutter-xs q-gutter-y-xs full-width">
+          <div class="col-12 col-sm-4 entry-meta">
+            <q-item-label>{{ entryTypeLabel(entry.entryType) }}</q-item-label>
+            <q-item-label caption>{{ formatDate(entry.date) }}</q-item-label>
+          </div>
+
+          <div class="col-12 col-sm-4 entry-qty">
+            <q-item-label>{{ entry.quantity }} uds.</q-item-label>
+            <q-item-label caption>@ {{ entry.price }} €</q-item-label>
+          </div>
+
+          <div class="col-12 col-sm-4 entry-total">
+            <q-item-label>{{ (entry.quantity * entry.price).toFixed(2) }} €</q-item-label>
+            <q-item-label v-if="entry.tax > 0" caption>Comisión: {{ entry.tax }} €</q-item-label>
+          </div>
+        </div>
       </q-item-section>
 
-      <q-item-section>
-        <q-item-label>{{ entry.quantity }} uds.</q-item-label>
-        <q-item-label caption>@ {{ entry.price }} €</q-item-label>
-      </q-item-section>
-
-      <q-item-section side>
-        <q-item-label>{{ (entry.quantity * entry.price).toFixed(2) }} €</q-item-label>
-        <q-item-label v-if="entry.tax > 0" caption>Comisión: {{ entry.tax }} €</q-item-label>
-      </q-item-section>
-
-      <q-item-section side>
+      <q-item-section side class="entry-actions">
         <q-btn
-          flat
-          dense
           round
           icon="delete"
           color="negative"
@@ -66,9 +69,7 @@ const emit = defineEmits<{
 }>();
 
 const sortedEntries = computed(() => {
-  return [...props.entries].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  return [...props.entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 });
 
 const entryTypeLabel = (type: string) => {
@@ -95,3 +96,23 @@ const formatDate = (dateString: string) => {
   });
 };
 </script>
+
+<style scoped>
+.entry-item .entry-total {
+  text-align: right;
+}
+
+@media (max-width: 599px) {
+  .entry-item {
+    padding: 12px 8px;
+  }
+
+  .entry-item .entry-total {
+    text-align: left;
+  }
+
+  .entries-list :deep(.q-item) + :deep(.q-item) {
+    margin-top: 10px;
+  }
+}
+</style>

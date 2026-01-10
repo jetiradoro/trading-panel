@@ -19,34 +19,19 @@
               {{ statusLabel }}
             </q-chip>
           </div>
-          <div class="text-subtitle2 text-grey">{{ operation.symbol?.name || 'N/A' }}</div>
+          <div class="text-subtitle2 text-grey">
+            {{ operation.symbol?.name || 'N/A' }}
+          </div>
+          <div class="text-subtitle2 text-grey">
+            <span :class="`text-${typeColor}`">{{ typeLabel }}</span> · {{ productLabel }}
+          </div>
         </div>
       </div>
 
       <!-- Info cards -->
       <div class="row q-col-gutter-md q-mb-md">
-        <div class="col-6">
-          <q-card flat bordered>
-            <q-card-section>
-              <div class="text-caption text-grey">Tipo</div>
-              <div class="text-h6">
-                <q-badge :color="typeColor" :label="typeLabel" />
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-6">
-          <q-card flat bordered>
-            <q-card-section>
-              <div class="text-caption text-grey">Producto</div>
-              <div class="text-h6">{{ productLabel }}</div>
-            </q-card-section>
-          </q-card>
-        </div>
-
         <div class="col-6" v-if="operation.status === 'closed' && operation.balance !== undefined">
-          <q-card flat bordered>
+          <q-card flat bordered class="full-height">
             <q-card-section>
               <div class="text-caption text-grey">Balance</div>
               <div
@@ -60,38 +45,37 @@
         </div>
 
         <div class="col-6" v-if="operation.status === 'open'">
-          <q-card flat bordered>
+          <q-card flat bordered class="full-height">
             <q-card-section>
-              <div class="text-caption text-grey">Cantidad actual</div>
-              <div class="text-h6">{{ operation.metrics?.currentQty?.toFixed(4) || '0' }}</div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-6" v-if="operation.status === 'open' && operation.metrics?.avgBuyPrice">
-          <q-card flat bordered>
-            <q-card-section>
-              <div class="text-caption text-grey">Precio medio</div>
-              <div class="text-h6">{{ operation.metrics.avgBuyPrice.toFixed(2) }} €</div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-6" v-if="operation.status === 'open' && operation.metrics?.currentInvestment">
-          <q-card flat bordered>
-            <q-card-section>
-              <div class="text-caption text-grey">Inversión actual</div>
-              <div class="text-h6">{{ operation.metrics.currentInvestment.toFixed(2) }} €</div>
+              <div class="text-caption text-grey">% Ganancia/Pérdida</div>
+              <div
+                v-if="
+                  operation.metrics?.pnlPercentage !== undefined &&
+                  operation.metrics?.pnlPercentage !== null
+                "
+                class="text-h6"
+                :class="operation.metrics.pnlPercentage >= 0 ? 'text-positive' : 'text-negative'"
+              >
+                {{ operation.metrics.pnlPercentage >= 0 ? '+' : ''
+                }}{{ operation.metrics.pnlPercentage.toFixed(2) }}%
+              </div>
+              <div v-else class="text-h6 text-grey-6">
+                <q-icon name="warning" color="orange" />
+                Sin precio actual
+              </div>
             </q-card-section>
           </q-card>
         </div>
 
         <div class="col-6" v-if="operation.status === 'open'">
-          <q-card flat bordered>
+          <q-card flat bordered class="full-height">
             <q-card-section>
-              <div class="text-caption text-grey">Ganancia/Pérdida actual</div>
+              <div class="text-caption text-grey">Ganancia/Pérdida €</div>
               <div
-                v-if="operation.metrics?.unrealizedPnL !== undefined && operation.metrics?.unrealizedPnL !== null"
+                v-if="
+                  operation.metrics?.unrealizedPnL !== undefined &&
+                  operation.metrics?.unrealizedPnL !== null
+                "
                 class="text-h6"
                 :class="operation.metrics.unrealizedPnL >= 0 ? 'text-positive' : 'text-negative'"
               >
@@ -105,21 +89,32 @@
           </q-card>
         </div>
 
-        <div class="col-6" v-if="operation.status === 'open'">
-          <q-card flat bordered>
+        <div
+          class="col-6"
+          v-if="operation.status === 'open' && operation.metrics?.currentInvestment"
+        >
+          <q-card flat bordered class="full-height">
             <q-card-section>
-              <div class="text-caption text-grey">% Ganancia/Pérdida</div>
-              <div
-                v-if="operation.metrics?.pnlPercentage !== undefined && operation.metrics?.pnlPercentage !== null"
-                class="text-h6"
-                :class="operation.metrics.pnlPercentage >= 0 ? 'text-positive' : 'text-negative'"
-              >
-                {{ operation.metrics.pnlPercentage >= 0 ? '+' : '' }}{{ operation.metrics.pnlPercentage.toFixed(2) }}%
-              </div>
-              <div v-else class="text-h6 text-grey-6">
-                <q-icon name="warning" color="orange" />
-                Sin precio actual
-              </div>
+              <div class="text-caption text-grey">Inversión actual</div>
+              <div class="text-h6">{{ operation.metrics.currentInvestment.toFixed(2) }} €</div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <div class="col-6" v-if="operation.status === 'open'">
+          <q-card flat bordered class="full-height">
+            <q-card-section>
+              <div class="text-caption text-grey">Cantidad actual</div>
+              <div class="text-h6">{{ operation.metrics?.currentQty?.toFixed(4) || '0' }}</div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <div class="col-6" v-if="operation.status === 'open' && operation.metrics?.avgBuyPrice">
+          <q-card flat bordered class="full-height">
+            <q-card-section>
+              <div class="text-caption text-grey">Precio medio</div>
+              <div class="text-h6">{{ operation.metrics.avgBuyPrice.toFixed(2) }} €</div>
             </q-card-section>
           </q-card>
         </div>
@@ -154,14 +149,7 @@
         <q-card-section>
           <div class="row items-center">
             <div class="text-h6 col">Precio actual</div>
-            <q-btn
-              flat
-              dense
-              round
-              icon="add"
-              color="primary"
-              @click="showPriceForm = true"
-            />
+            <q-btn flat dense round icon="add" color="primary" @click="showPriceForm = true" />
           </div>
         </q-card-section>
         <q-separator />
@@ -180,12 +168,7 @@
       <!-- Botones de acción -->
       <div class="q-mt-md row q-gutter-sm">
         <q-btn label="Volver" color="primary" :to="{ name: 'operations' }" />
-        <q-btn
-          label="Eliminar operación"
-          color="negative"
-          outline
-          @click="confirmDelete"
-        />
+        <q-btn label="Eliminar operación" color="negative" outline @click="confirmDelete" />
       </div>
     </div>
 
@@ -245,9 +228,7 @@ const refreshOperation = async () => {
   loading.value = true;
   try {
     await operationsStore.fetchOperationDetail(operationId.value);
-    appStore.setSection(
-      `Operación: ${operation.value?.symbol?.code || 'Detalle'}`
-    );
+    appStore.setSection(`Operación: ${operation.value?.symbol?.code || 'Detalle'}`);
   } finally {
     loading.value = false;
   }
@@ -333,7 +314,8 @@ const confirmDeleteEntry = async (entryId: string) => {
 const confirmDelete = () => {
   $q.dialog({
     title: 'Eliminar operación',
-    message: '¿Estás seguro de que deseas eliminar esta operación? Esta acción no se puede deshacer.',
+    message:
+      '¿Estás seguro de que deseas eliminar esta operación? Esta acción no se puede deshacer.',
     cancel: true,
     persistent: true,
   }).onOk(() => {

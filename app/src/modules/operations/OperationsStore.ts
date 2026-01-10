@@ -306,12 +306,18 @@ export const useOperationsStore = defineStore('operations', {
     },
 
     /**
-     * Balance total de operaciones cerradas
+     * Balance total (cerradas + abiertas)
      */
     totalBalance: (state): number => {
-      return state.operations
-        .filter((op) => op.status === 'closed' && op.balance)
-        .reduce((acc, op) => acc + (op.balance || 0), 0);
+      return state.operations.reduce((acc, op) => {
+        if (op.status === 'closed') {
+          return acc + (op.balance ?? 0);
+        }
+        if (op.status === 'open') {
+          return acc + (op.metrics?.unrealizedPnL ?? 0);
+        }
+        return acc;
+      }, 0);
     },
 
     /**

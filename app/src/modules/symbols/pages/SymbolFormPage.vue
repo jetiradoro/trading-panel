@@ -48,7 +48,7 @@
           color="primary"
           :loading="saving"
         />
-        <q-btn type="button" label="Cancelar" color="red" :to="{ name: 'symbols' }" />
+        <q-btn type="button" label="Cancelar" color="red" :to="returnRoute" />
       </div>
     </q-form>
   </q-page>
@@ -70,6 +70,13 @@ const $q = useQuasar();
 
 const symbolId = computed(() => route.params.id as string | undefined);
 const isEdit = computed(() => !!symbolId.value);
+
+const returnRoute = computed(() => {
+  if (isEdit.value && symbolId.value) {
+    return { name: 'symbols.detail', params: { id: symbolId.value } };
+  }
+  return { name: 'symbols' };
+});
 
 appStore.setSection(isEdit.value ? 'Editar Símbolo' : 'Nuevo Símbolo');
 
@@ -144,7 +151,7 @@ async function save() {
       });
     }
 
-    await router.push({ name: 'symbols' });
+    await router.push(returnRoute.value);
   } catch (error) {
     console.error('Error saving symbol:', error);
     $q.notify({

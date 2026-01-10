@@ -47,39 +47,20 @@
         <q-card-section>
           <div class="row items-center">
             <div class="text-h6 col">Historial de precios</div>
-            <q-btn
-              flat
-              dense
-              round
-              icon="add"
-              color="primary"
-              @click="showPriceForm = true"
-            />
+            <q-btn flat dense round icon="add" color="primary" @click="showPriceForm = true" />
           </div>
         </q-card-section>
         <q-separator />
 
         <q-list v-if="priceHistory && priceHistory.length > 0" separator>
-          <q-item
-            v-for="price in priceHistory"
-            :key="price.id"
-          >
-            <q-item-section>
+          <q-item v-for="price in priceHistory" :key="price.id">
+            <q-item-section @click="handleEditPrice(price)">
               <q-item-label>{{ price.price.toFixed(2) }} €</q-item-label>
               <q-item-label caption>{{ formatDate(price.date) }}</q-item-label>
             </q-item-section>
 
             <q-item-section side>
               <div class="row q-gutter-xs">
-                <q-btn
-                  flat
-                  dense
-                  round
-                  icon="edit"
-                  color="primary"
-                  size="sm"
-                  @click="handleEditPrice(price)"
-                />
                 <q-btn
                   flat
                   dense
@@ -108,12 +89,7 @@
           outline
           :to="{ name: 'symbols.edit', params: { id: symbolId } }"
         />
-        <q-btn
-          label="Eliminar símbolo"
-          color="negative"
-          outline
-          @click="confirmDelete"
-        />
+        <q-btn label="Eliminar símbolo" color="negative" outline @click="confirmDelete" />
       </div>
     </div>
 

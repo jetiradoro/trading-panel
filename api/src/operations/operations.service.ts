@@ -144,8 +144,11 @@ export class OperationsService {
     // Calcular métricas para operaciones abiertas
     return operations.map((operation: any) => {
       if (operation.status === 'open') {
-        const currentPrice = operation.symbol?.price_history?.[0]?.price;
-        const metrics = this.calculateMetrics(operation, currentPrice ? Number(currentPrice) : undefined);
+        const currentPrice = operation.symbol?.priceHistory?.[0]?.price;
+        const metrics = this.calculateMetrics(
+          operation,
+          currentPrice ? Number(currentPrice) : undefined
+        );
         return {
           ...operation,
           metrics,
@@ -229,8 +232,11 @@ export class OperationsService {
 
     // Si está abierta, calcular métricas
     if (operation.status === 'open') {
-      const currentPrice = (operation as any).symbol?.price_history?.[0]?.price;
-      const metrics = this.calculateMetrics(operation, currentPrice ? Number(currentPrice) : undefined);
+      const currentPrice = (operation as any).symbol?.priceHistory?.[0]?.price;
+      const metrics = this.calculateMetrics(
+        operation,
+        currentPrice ? Number(currentPrice) : undefined
+      );
 
       return {
         ...operation,

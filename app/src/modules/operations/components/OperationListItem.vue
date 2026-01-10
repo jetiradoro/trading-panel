@@ -22,7 +22,7 @@
         <q-item-label>
           <q-badge :color="typeColor" :label="typeLabel" />
         </q-item-label>
-        <q-item-label caption>{{ formatDate(operation.createdAt) }}</q-item-label>
+        <q-item-label caption>{{ formatDate(firstEntryDate) }}</q-item-label>
       </q-item-section>
 
       <q-item-section side>
@@ -34,6 +34,11 @@
         <q-item-label v-else-if="operation.metrics?.unrealizedPnL !== undefined && operation.metrics?.unrealizedPnL !== null">
           <span :class="operation.metrics.unrealizedPnL >= 0 ? 'text-positive' : 'text-negative'">
             {{ operation.metrics.unrealizedPnL.toFixed(2) }} €
+          </span>
+        </q-item-label>
+        <q-item-label v-if="pnlPercentageDisplay" caption>
+          <span :class="pnlPercentageDisplay.className">
+            {{ pnlPercentageDisplay.text }}
           </span>
         </q-item-label>
         <q-item-label caption>
@@ -61,6 +66,10 @@ interface OperationMetrics {
   sellQty: number;
 }
 
+interface OperationEntry {
+  date: string;
+}
+
 interface Operation {
   id: string;
   product: string;
@@ -73,6 +82,7 @@ interface Operation {
     name: string;
   };
   metrics?: OperationMetrics;
+  entries?: OperationEntry[];
 }
 
 const props = defineProps<{
@@ -126,6 +136,30 @@ const productIcon = computed(() => {
       return 'help';
   }
 });
+
+const firstEntryDate = computed(() => {
+  const entries = props.operation.entries;
+  if (!entries || entries.length === 0) return props.operation.createdAt;
+  const [firstEntry] = entries;
+  if (!firstEntry) return props.operation.createdAt;
+  return entries.reduce((oldest, entry) => {
+    return new Date(entry.date).getTime() < new Date(oldest).getTime() ? entry.date : oldest;
+  }, firstEntry.date);
+});
+
+const pnlPercentageDisplay = computed(() => {
+  const value = props.operation.metrics?.pnlPercentage;
+  if (value === undefined || value === null) return null;
+  return {
+    value,
+    text: formatPercentage(value),
+    className: value >= 0 ? 'text-positive' : 'text-negative',
+  };
+});
+
+const formatPercentage = (value: number) => {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+};
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);

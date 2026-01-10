@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
 import { useAppStore } from 'src/stores/app';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import OperationsList from '../components/OperationsList.vue';
 import OperationsFilters from '../components/OperationsFilters.vue';
 import ActionsBtn from '../components/ActionsBtn.vue';
@@ -18,6 +18,7 @@ import { useQuasar } from 'quasar';
 const appStore = useAppStore();
 const operationsStore = useOperationsStore();
 const $q = useQuasar();
+const isMobile = computed(() => $q.screen.lt.md);
 
 const filters = ref({
   status: '',
@@ -35,8 +36,14 @@ onUnmounted(() => {
 const openOperationsCount = computed(() => operationsStore.openOperations.length);
 const totalBalance = computed(() => operationsStore.totalBalance);
 
-appStore.setSection(
-  `Operaciones: ${openOperationsCount.value} abiertas | Balance: ${totalBalance.value.toFixed(2)} €`
+watch(
+  [openOperationsCount, totalBalance, isMobile],
+  () => {
+    const balanceLabel = `Balance: ${totalBalance.value.toFixed(2)} €`;
+    const fullLabel = `Operaciones: ${openOperationsCount.value} abiertas | ${balanceLabel}`;
+    appStore.setSection(isMobile.value ? balanceLabel : fullLabel);
+  },
+  { immediate: true }
 );
 
 const filteredOperations = computed(() => {
