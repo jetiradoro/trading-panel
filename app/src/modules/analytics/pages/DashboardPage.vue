@@ -1,7 +1,8 @@
 <template>
   <q-page padding>
-    <div class="q-mb-md">
-      <h5 class="q-my-sm">Dashboard de Analítica</h5>
+    <div class="row items-center justify-between q-mb-md q-gutter-sm">
+      <h5 class="q-my-none col-auto">Dashboard de Analítica</h5>
+      <period-filter v-model="store.period" @update:model-value="onPeriodChange" class="col-auto" />
     </div>
 
     <!-- Balance de cuenta -->
@@ -23,7 +24,7 @@
       </div>
     </div>
 
-    <!-- Rendimiento global -->
+    <!-- Rendimiento global y Distribución por producto -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-4">
         <performance-summary
@@ -41,19 +42,26 @@
         </q-card>
       </div>
 
-      <!-- Placeholder para gráficos -->
+      <!-- Distribución por producto -->
       <div class="col-12 col-md-8">
-        <q-card flat bordered>
-          <q-card-section class="text-center text-grey-6">
-            <p>Próximamente: Gráficos de evolución y distribución</p>
-          </q-card-section>
-        </q-card>
+        <product-distribution-chart
+          :data="productDistribution || []"
+          :loading="loadingCharts"
+        />
       </div>
+    </div>
+
+    <!-- Evolución del portfolio -->
+    <div class="q-mb-lg">
+      <portfolio-evolution-chart
+        :data="portfolioEvolution || []"
+        :loading="loadingCharts"
+      />
     </div>
 
     <!-- Ranking de símbolos -->
     <symbol-ranking-table
-      v-if="symbolsRanking"
+      v-if="symbolsRanking && symbolsRanking.length > 0"
       :symbols="symbolsRanking"
       :limit="10"
     />
@@ -69,63 +77,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { api } from 'src/boot/axios';
+import { onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import AccountBalanceCards from '../components/AccountBalanceCards.vue';
 import PerformanceSummary from '../components/PerformanceSummary.vue';
 import SymbolRankingTable from '../components/SymbolRankingTable.vue';
-import type { AccountBalanceDto, PerformanceDto, SymbolPerformanceDto } from '../types';
+import PortfolioEvolutionChart from '../components/PortfolioEvolutionChart.vue';
+import ProductDistributionChart from '../components/ProductDistributionChart.vue';
+import PeriodFilter from '../components/PeriodFilter.vue';
+import { useAnalyticsStore } from '../AnalyticsStore';
 
 /**
  * Página principal del dashboard de analítica
+ * Usa el store de analytics para gestión de estado y filtros de periodo
  */
-const accountBalance = ref<AccountBalanceDto | null>(null);
-const performance = ref<PerformanceDto | null>(null);
-const symbolsRanking = ref<SymbolPerformanceDto[] | null>(null);
+const store = useAnalyticsStore();
+
+const {
+  accountBalance,
+  performance,
+  symbolsRanking,
+  productDistribution,
+  portfolioEvolution,
+  loadingCharts,
+} = storeToRefs(store);
 
 /**
- * Carga los datos de balance de cuenta
+ * Maneja el cambio de periodo
  */
-async function loadAccountBalance() {
-  try {
-    const { data } = await api.get<AccountBalanceDto>('/analytics/account-balance');
-    accountBalance.value = data;
-  } catch (error) {
-    console.error('Error al cargar balance de cuenta:', error);
-  }
+async function onPeriodChange() {
+  await store.changePeriod(store.period);
 }
 
 /**
- * Carga las métricas de rendimiento
+ * Carga inicial de datos
  */
-async function loadPerformance() {
-  try {
-    const { data } = await api.get<PerformanceDto>('/analytics/performance', {
-      params: { period: '30d' }
-    });
-    performance.value = data;
-  } catch (error) {
-    console.error('Error al cargar rendimiento:', error);
-  }
-}
-
-/**
- * Carga el ranking de símbolos
- */
-async function loadSymbolsRanking() {
-  try {
-    const { data } = await api.get<SymbolPerformanceDto[]>('/analytics/symbols-ranking', {
-      params: { period: '30d' }
-    });
-    symbolsRanking.value = data;
-  } catch (error) {
-    console.error('Error al cargar ranking de símbolos:', error);
-  }
-}
-
-onMounted(() => {
-  void loadAccountBalance();
-  void loadPerformance();
-  void loadSymbolsRanking();
+onMounted(async () => {
+  await store.loadDashboard();
 });
 </script>

@@ -20,6 +20,7 @@ Documentación detallada del backend, APIs, modelos de datos y lógica de negoci
 **Módulos**:
 - [Operaciones - API](./technical/operaciones-api.md) - Sistema de operaciones de trading
 - [Historial de Precios - API](./technical/historial-precios.md) - Sistema de historial de precios de símbolos
+- [Analítica - API](./technical/analytics-api.md) - Sistema de Business Intelligence y dashboard
 
 ---
 
@@ -38,6 +39,7 @@ Guías prácticas paso a paso para usar la aplicación.
 **Módulos**:
 - [Operaciones - Guía de Usuario](./user-guide/operaciones.md) - Cómo gestionar tus inversiones
 - [Historial de Precios - Guía de Usuario](./user-guide/historial-precios.md) - Cómo gestionar el historial de precios
+- [Analítica - Guía de Usuario](./user-guide/analytics.md) - Cómo usar el dashboard de analítica
 
 ---
 
@@ -48,10 +50,12 @@ wiki/
 ├── README.md                          # Este archivo
 ├── technical/                         # Documentación técnica
 │   ├── operaciones-api.md            # API de operaciones
-│   └── historial-precios.md          # API de historial de precios
+│   ├── historial-precios.md          # API de historial de precios
+│   └── analytics-api.md              # API de analítica
 └── user-guide/                        # Manuales de usuario
     ├── operaciones.md                # Guía de operaciones
-    └── historial-precios.md          # Guía de historial de precios
+    ├── historial-precios.md          # Guía de historial de precios
+    └── analytics.md                  # Guía de analítica
 ```
 
 ---
@@ -101,6 +105,7 @@ Debe incluir:
 |--------|--------|----------------------|----------------|
 | Operaciones | ✅ Fase 2 | [Ver](./technical/operaciones-api.md) | [Ver](./user-guide/operaciones.md) |
 | Historial de Precios | ✅ Completado | [Ver](./technical/historial-precios.md) | [Ver](./user-guide/historial-precios.md) |
+| Analítica | ✅ Completado | [Ver](./technical/analytics-api.md) | [Ver](./user-guide/analytics.md) |
 
 ---
 
@@ -109,6 +114,7 @@ Debe incluir:
 - [x] Estructura base de wiki separada
 - [x] Documentación de Operaciones (Backend - Fase 2)
 - [x] Documentación de Historial de Precios (Refactorización)
+- [x] Documentación de Analítica (Business Intelligence)
 - [ ] Documentación de Operaciones (Frontend - Fase 3-5)
 - [ ] Documentación de Símbolos
 - [ ] Documentación de Cuentas
