@@ -2,6 +2,17 @@ import { defineStore } from 'pinia';
 import { api } from 'boot/axios';
 
 /**
+ * Interfaz para el historial de precios
+ */
+interface PriceHistory {
+  id: string;
+  symbolId: string;
+  price: number;
+  date: string;
+  createdAt: string;
+}
+
+/**
  * Interfaz para un símbolo de trading
  */
 interface Symbol {
@@ -12,6 +23,7 @@ interface Symbol {
   product: string; // 'crypto' | 'stock' | 'etf'
   createdAt: string;
   updatedAt: string;
+  priceHistory?: PriceHistory[];
 }
 
 /**
@@ -32,6 +44,22 @@ interface UpdateSymbolDto {
   name?: string;
   logo?: string;
   product?: string;
+}
+
+/**
+ * DTO para crear precio en historial
+ */
+interface NewPriceHistoryDto {
+  price: number;
+  date: string;
+}
+
+/**
+ * DTO para actualizar precio en historial
+ */
+interface UpdatePriceHistoryDto {
+  price?: number;
+  date?: string;
 }
 
 interface SymbolsState {
@@ -162,6 +190,96 @@ export const useSymbolsStore = defineStore('symbols', {
       } catch (error) {
         console.error('Error deleting symbol:', error);
         this.error = 'Error al eliminar símbolo';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Obtener historial de precios de un símbolo
+     */
+    async fetchPriceHistory(symbolId: string) {
+      try {
+        this.loading = true;
+        this.error = null;
+        const { data } = await api.get(`/symbols/${symbolId}/prices`);
+        if (this.currentSymbol?.id === symbolId) {
+          this.currentSymbol.priceHistory = data;
+        }
+        return data;
+      } catch (error) {
+        console.error('Error fetching price history:', error);
+        this.error = 'Error al cargar historial de precios';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Agregar precio al historial
+     */
+    async addPriceHistory(symbolId: string, payload: NewPriceHistoryDto) {
+      try {
+        this.loading = true;
+        this.error = null;
+        const { data } = await api.post(`/symbols/${symbolId}/prices`, payload);
+        if (this.currentSymbol?.id === symbolId) {
+          await this.fetchPriceHistory(symbolId);
+        }
+        return data;
+      } catch (error) {
+        console.error('Error adding price:', error);
+        this.error = 'Error al agregar precio';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Actualizar precio del historial
+     */
+    async updatePriceHistory(
+      symbolId: string,
+      priceId: string,
+      payload: UpdatePriceHistoryDto
+    ) {
+      try {
+        this.loading = true;
+        this.error = null;
+        const { data } = await api.put(
+          `/symbols/${symbolId}/prices/${priceId}`,
+          payload
+        );
+        if (this.currentSymbol?.id === symbolId) {
+          await this.fetchPriceHistory(symbolId);
+        }
+        return data;
+      } catch (error) {
+        console.error('Error updating price:', error);
+        this.error = 'Error al actualizar precio';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Eliminar precio del historial
+     */
+    async deletePriceHistory(symbolId: string, priceId: string) {
+      try {
+        this.loading = true;
+        this.error = null;
+        await api.delete(`/symbols/${symbolId}/prices/${priceId}`);
+        if (this.currentSymbol?.id === symbolId) {
+          await this.fetchPriceHistory(symbolId);
+        }
+      } catch (error) {
+        console.error('Error deleting price:', error);
+        this.error = 'Error al eliminar precio';
         throw error;
       } finally {
         this.loading = false;

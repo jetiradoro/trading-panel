@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOperationDto } from './dto/create-operation.dto';
 import { CreateEntryDto } from './dto/create-entry.dto';
-import { CreatePriceHistoryDto } from './dto/create-price-history.dto';
+import { UpdateEntryDto } from './dto/update-entry.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { operations } from '@prisma/client';
 
@@ -92,10 +92,10 @@ export class OperationsService {
           },
         });
 
-        // Insertar automáticamente el precio de entrada en el historial
+        // Insertar automáticamente el precio de entrada en el historial del símbolo
         await tx.price_history.create({
           data: {
-            operationId: operation.id,
+            symbolId: symbolId,
             price: firstEntry.price,
             date: new Date(firstEntry.date),
           },
@@ -125,23 +125,26 @@ export class OperationsService {
         ...(symbolId && { symbolId }),
       },
       include: {
-        symbol: true,
+        symbol: {
+          include: {
+            priceHistory: {
+              orderBy: { date: 'desc' },
+              take: 1,
+            },
+          },
+        },
         account: true,
         entries: {
           orderBy: { date: 'asc' },
-        },
-        prices: {
-          orderBy: { date: 'desc' },
-          take: 1,
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     // Calcular métricas para operaciones abiertas
-    return operations.map((operation) => {
+    return operations.map((operation: any) => {
       if (operation.status === 'open') {
-        const currentPrice = operation.prices[0]?.price;
+        const currentPrice = operation.symbol?.price_history?.[0]?.price;
         const metrics = this.calculateMetrics(operation, currentPrice ? Number(currentPrice) : undefined);
         return {
           ...operation,
@@ -199,20 +202,23 @@ export class OperationsService {
   }
 
   /**
-   * Obtener detalle de operación con entries, prices y cálculos
+   * Obtener detalle de operación con entries y cálculos
    */
   async findOne(id: string): Promise<any> {
     const operation = await this.prisma.operations.findUnique({
       where: { id },
       include: {
-        symbol: true,
+        symbol: {
+          include: {
+            priceHistory: {
+              orderBy: { date: 'desc' },
+              take: 1,
+            },
+          },
+        },
         account: true,
         entries: {
           orderBy: { date: 'asc' },
-        },
-        prices: {
-          orderBy: { date: 'desc' },
-          take: 1,
         },
       },
     });
@@ -223,7 +229,7 @@ export class OperationsService {
 
     // Si está abierta, calcular métricas
     if (operation.status === 'open') {
-      const currentPrice = operation.prices[0]?.price;
+      const currentPrice = (operation as any).symbol?.price_history?.[0]?.price;
       const metrics = this.calculateMetrics(operation, currentPrice ? Number(currentPrice) : undefined);
 
       return {
@@ -282,6 +288,33 @@ export class OperationsService {
   }
 
   /**
+   * Actualizar entrada de operación
+   */
+  async updateEntry(
+    operationId: string,
+    entryId: string,
+    data: UpdateEntryDto,
+  ): Promise<any> {
+    const entry = await this.prisma.operation_entries.findUnique({
+      where: { id: entryId },
+    });
+
+    if (!entry || entry.operationId !== operationId) {
+      throw new NotFoundException(`Entry with id ${entryId} not found`);
+    }
+
+    const updateData: any = { ...data };
+    if (data.date) {
+      updateData.date = new Date(data.date);
+    }
+
+    return this.prisma.operation_entries.update({
+      where: { id: entryId },
+      data: updateData,
+    });
+  }
+
+  /**
    * Eliminar entrada de operación
    */
   async removeEntry(operationId: string, entryId: string): Promise<any> {
@@ -295,30 +328,6 @@ export class OperationsService {
 
     return this.prisma.operation_entries.delete({
       where: { id: entryId },
-    });
-  }
-
-  /**
-   * Agregar precio histórico
-   */
-  async addPrice(
-    operationId: string,
-    data: CreatePriceHistoryDto,
-  ): Promise<any> {
-    const operation = await this.prisma.operations.findUnique({
-      where: { id: operationId },
-    });
-
-    if (!operation) {
-      throw new NotFoundException(`Operation with id ${operationId} not found`);
-    }
-
-    return this.prisma.price_history.create({
-      data: {
-        operationId,
-        ...data,
-        date: new Date(data.date),
-      },
     });
   }
 

@@ -86,29 +86,39 @@
           </q-card>
         </div>
 
-        <div class="col-6" v-if="operation.status === 'open' && operation.metrics?.unrealizedPnL !== undefined && operation.metrics?.unrealizedPnL !== null">
+        <div class="col-6" v-if="operation.status === 'open'">
           <q-card flat bordered>
             <q-card-section>
               <div class="text-caption text-grey">Ganancia/Pérdida actual</div>
               <div
+                v-if="operation.metrics?.unrealizedPnL !== undefined && operation.metrics?.unrealizedPnL !== null"
                 class="text-h6"
                 :class="operation.metrics.unrealizedPnL >= 0 ? 'text-positive' : 'text-negative'"
               >
                 {{ operation.metrics.unrealizedPnL.toFixed(2) }} €
               </div>
+              <div v-else class="text-h6 text-grey-6">
+                <q-icon name="warning" color="orange" />
+                Sin precio actual
+              </div>
             </q-card-section>
           </q-card>
         </div>
 
-        <div class="col-6" v-if="operation.status === 'open' && operation.metrics?.pnlPercentage !== undefined && operation.metrics?.pnlPercentage !== null">
+        <div class="col-6" v-if="operation.status === 'open'">
           <q-card flat bordered>
             <q-card-section>
               <div class="text-caption text-grey">% Ganancia/Pérdida</div>
               <div
+                v-if="operation.metrics?.pnlPercentage !== undefined && operation.metrics?.pnlPercentage !== null"
                 class="text-h6"
                 :class="operation.metrics.pnlPercentage >= 0 ? 'text-positive' : 'text-negative'"
               >
                 {{ operation.metrics.pnlPercentage >= 0 ? '+' : '' }}{{ operation.metrics.pnlPercentage.toFixed(2) }}%
+              </div>
+              <div v-else class="text-h6 text-grey-6">
+                <q-icon name="warning" color="orange" />
+                Sin precio actual
               </div>
             </q-card-section>
           </q-card>
@@ -132,16 +142,19 @@
           </div>
         </q-card-section>
         <q-separator />
-        <EntriesList :entries="operation.entries || []" @delete="handleDeleteEntry" />
+        <EntriesList
+          :entries="operation.entries || []"
+          @edit="handleEditEntry"
+          @delete="handleDeleteEntry"
+        />
       </q-card>
 
-      <!-- Historial de precios -->
-      <q-card flat bordered class="q-mb-md">
+      <!-- Precio actual del símbolo -->
+      <q-card flat bordered class="q-mb-md" v-if="currentPrice">
         <q-card-section>
           <div class="row items-center">
-            <div class="text-h6 col">Historial de precios</div>
+            <div class="text-h6 col">Precio actual</div>
             <q-btn
-              v-if="operation.status === 'open'"
               flat
               dense
               round
@@ -152,7 +165,16 @@
           </div>
         </q-card-section>
         <q-separator />
-        <PriceHistoryList :prices="operation.prices || []" />
+        <q-card-section>
+          <div class="row items-center">
+            <div class="col">
+              <div class="text-h5">{{ currentPrice.price }} €</div>
+              <div class="text-caption text-grey">
+                {{ formatDate(currentPrice.date) }}
+              </div>
+            </div>
+          </div>
+        </q-card-section>
       </q-card>
 
       <!-- Botones de acción -->
@@ -173,11 +195,14 @@
     <EntryForm
       v-model="showEntryForm"
       :operation-id="operationId"
+      :edit-entry="editingEntry"
       @saved="refreshOperation"
     />
-    <PriceForm
+
+    <PriceHistoryForm
+      v-if="operation?.symbolId"
       v-model="showPriceForm"
-      :operation-id="operationId"
+      :symbol-id="operation.symbolId"
       @saved="refreshOperation"
     />
   </q-page>
@@ -191,8 +216,7 @@ import { useOperationsStore } from '../OperationsStore';
 import { operationTypes, operationStatus, products } from 'src/config';
 import EntriesList from '../components/EntriesList.vue';
 import EntryForm from '../components/EntryForm.vue';
-import PriceHistoryList from '../components/PriceHistoryList.vue';
-import PriceForm from '../components/PriceForm.vue';
+import PriceHistoryForm from 'src/modules/symbols/components/PriceHistoryForm.vue';
 import { useQuasar } from 'quasar';
 
 const appStore = useAppStore();
@@ -205,8 +229,13 @@ const operationId = computed(() => route.params.id as string);
 const loading = ref(false);
 const showEntryForm = ref(false);
 const showPriceForm = ref(false);
+const editingEntry = ref(null);
 
 const operation = computed(() => operationsStore.currentOperation);
+
+const currentPrice = computed(() => {
+  return operation.value?.symbol?.priceHistory?.[0] || null;
+});
 
 onMounted(async () => {
   await refreshOperation();
@@ -257,6 +286,22 @@ const productLabel = computed(() => {
   const product = products.find((p) => p.code === op.product);
   return product?.label || op.product;
 });
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const handleEditEntry = (entry: any) => {
+  editingEntry.value = entry;
+  showEntryForm.value = true;
+};
 
 const handleDeleteEntry = (entryId: string) => {
   $q.dialog({

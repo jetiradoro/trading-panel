@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Body,
   Param,
@@ -11,7 +12,7 @@ import {
 import { OperationsService } from './operations.service';
 import { CreateOperationDto } from './dto/create-operation.dto';
 import { CreateEntryDto } from './dto/create-entry.dto';
-import { CreatePriceHistoryDto } from './dto/create-price-history.dto';
+import { UpdateEntryDto } from './dto/update-entry.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { AppClient } from '../common/decorators/app-client.decorator';
 import { users } from '@prisma/client';
@@ -55,14 +56,18 @@ export class OperationsController {
     return this.service.addEntry(id, data);
   }
 
+  @Put(':id/entries/:entryId')
+  updateEntry(
+    @Param('id') id: string,
+    @Param('entryId') entryId: string,
+    @Body() data: UpdateEntryDto,
+  ) {
+    return this.service.updateEntry(id, entryId, data);
+  }
+
   @Delete(':id/entries/:entryId')
   removeEntry(@Param('id') id: string, @Param('entryId') entryId: string) {
     return this.service.removeEntry(id, entryId);
-  }
-
-  @Post(':id/prices')
-  addPrice(@Param('id') id: string, @Body() data: CreatePriceHistoryDto) {
-    return this.service.addPrice(id, data);
   }
 
   @Delete(':id')

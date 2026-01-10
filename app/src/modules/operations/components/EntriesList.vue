@@ -1,6 +1,11 @@
 <template>
   <q-list v-if="entries.length > 0">
-    <q-item v-for="entry in sortedEntries" :key="entry.id">
+    <q-item
+      v-for="entry in sortedEntries"
+      :key="entry.id"
+      clickable
+      @click="emit('edit', entry)"
+    >
       <q-item-section avatar>
         <q-avatar :color="entryTypeColor(entry.entryType)" text-color="white" size="md">
           <q-icon :name="entryTypeIcon(entry.entryType)" />
@@ -30,7 +35,7 @@
           icon="delete"
           color="negative"
           size="sm"
-          @click="emit('delete', entry.id)"
+          @click.stop="emit('delete', entry.id)"
         />
       </q-item-section>
     </q-item>
@@ -56,6 +61,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
+  edit: [entry: Entry];
   delete: [entryId: string];
 }>();
 

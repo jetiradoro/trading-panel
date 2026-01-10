@@ -137,7 +137,7 @@ const productIcon = (productCode: string) => {
 };
 
 const editSymbol = (symbolId: string) => {
-  void router.push({ name: 'symbols.edit', params: { id: symbolId } });
+  void router.push({ name: 'symbols.detail', params: { id: symbolId } });
 };
 
 const handleDelete = (symbol: any) => {

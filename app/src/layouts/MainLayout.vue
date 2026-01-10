@@ -8,6 +8,10 @@
           <q-btn flat :to="{ name: 'panel' }">{{ account?.name }}</q-btn>
         </q-toolbar-title>
 
+        <q-badge color="black" text-color="white" class="q-mr-md">
+          v{{ appVersion }}
+        </q-badge>
+
         <UserMenu />
       </q-toolbar>
       <q-toolbar class="bg-dark" v-if="section">
@@ -37,12 +41,14 @@ import { useAccountStore } from 'src/stores/account';
 import { useUserStore } from 'src/stores/user';
 import { useAppStore } from 'src/stores/app';
 import { computed } from 'vue';
+import { config } from 'src/config';
 
 const accountStore = useAccountStore();
 const userStore = useUserStore();
 const appStore = useAppStore();
 
 const section = computed(() => appStore.current_section);
+const appVersion = config.version;
 
 onBeforeMount(async () => {
   const token = userStore.user?.access_token;

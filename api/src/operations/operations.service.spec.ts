@@ -18,7 +18,9 @@ describe('OperationsService', () => {
     operation_entries: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
+      findMany: jest.fn(),
     },
     price_history: {
       create: jest.fn(),
@@ -126,6 +128,9 @@ describe('OperationsService', () => {
           operation_entries: {
             create: jest.fn().mockResolvedValue(mockEntry),
           },
+          price_history: {
+            create: jest.fn().mockResolvedValue(mockPrice),
+          },
         };
         return callback(mockTx);
       });
@@ -154,12 +159,23 @@ describe('OperationsService', () => {
           product: 'crypto',
         },
         include: {
-          symbol: true,
+          symbol: {
+            include: {
+              priceHistory: {
+                orderBy: { date: 'desc' },
+                take: 1,
+              },
+            },
+          },
           account: true,
+          entries: {
+            orderBy: { date: 'asc' },
+          },
         },
         orderBy: { createdAt: 'desc' },
       });
-      expect(result).toEqual(operations);
+      // Al ser operaciones abiertas, se agregan métricas
+      expect(result[0]).toHaveProperty('metrics');
     });
 
     it('should return operations without optional filters', async () => {
@@ -171,12 +187,23 @@ describe('OperationsService', () => {
       expect(prisma.operations.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
         include: {
-          symbol: true,
+          symbol: {
+            include: {
+              priceHistory: {
+                orderBy: { date: 'desc' },
+                take: 1,
+              },
+            },
+          },
           account: true,
+          entries: {
+            orderBy: { date: 'asc' },
+          },
         },
         orderBy: { createdAt: 'desc' },
       });
-      expect(result).toEqual(operations);
+      // Al ser operaciones abiertas, se agregan métricas
+      expect(result[0]).toHaveProperty('metrics');
     });
   });
 
@@ -199,10 +226,18 @@ describe('OperationsService', () => {
       expect(prisma.operations.findUnique).toHaveBeenCalledWith({
         where: { id: 'op-1' },
         include: {
-          symbol: true,
+          symbol: {
+            include: {
+              priceHistory: {
+                orderBy: { date: 'desc' },
+                take: 1,
+              },
+            },
+          },
           account: true,
-          entries: { orderBy: { date: 'asc' } },
-          prices: { orderBy: { date: 'desc' }, take: 1 },
+          entries: {
+            orderBy: { date: 'asc' },
+          },
         },
       });
       expect(result).toBeDefined();
@@ -259,6 +294,53 @@ describe('OperationsService', () => {
     });
   });
 
+  describe('updateEntry', () => {
+    const updateDto = {
+      quantity: 2.0,
+      price: 52000,
+    };
+
+    it('should update entry in operation', async () => {
+      const updatedEntry = { ...mockEntry, ...updateDto };
+      mockPrismaService.operation_entries.findUnique.mockResolvedValue(
+        mockEntry,
+      );
+      mockPrismaService.operation_entries.update.mockResolvedValue(
+        updatedEntry,
+      );
+
+      const result = await service.updateEntry('op-1', 'entry-1', updateDto);
+
+      expect(prisma.operation_entries.findUnique).toHaveBeenCalledWith({
+        where: { id: 'entry-1' },
+      });
+      expect(prisma.operation_entries.update).toHaveBeenCalledWith({
+        where: { id: 'entry-1' },
+        data: updateDto,
+      });
+      expect(result).toEqual(updatedEntry);
+    });
+
+    it('should throw NotFoundException if entry not found', async () => {
+      mockPrismaService.operation_entries.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.updateEntry('op-1', 'invalid-id', updateDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if entry does not belong to operation', async () => {
+      mockPrismaService.operation_entries.findUnique.mockResolvedValue({
+        ...mockEntry,
+        operationId: 'other-op',
+      });
+
+      await expect(
+        service.updateEntry('op-1', 'entry-1', updateDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('removeEntry', () => {
     it('should remove entry from operation', async () => {
       mockPrismaService.operation_entries.findUnique.mockResolvedValue(
@@ -292,40 +374,6 @@ describe('OperationsService', () => {
       });
 
       await expect(service.removeEntry('op-1', 'entry-1')).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
-  describe('addPrice', () => {
-    const priceDto = {
-      price: 51000,
-      date: '2024-01-01T00:00:00.000Z',
-    };
-
-    it('should add price history to operation', async () => {
-      mockPrismaService.operations.findUnique.mockResolvedValue(mockOperation);
-      mockPrismaService.price_history.create.mockResolvedValue(mockPrice);
-
-      const result = await service.addPrice('op-1', priceDto);
-
-      expect(prisma.operations.findUnique).toHaveBeenCalledWith({
-        where: { id: 'op-1' },
-      });
-      expect(prisma.price_history.create).toHaveBeenCalledWith({
-        data: {
-          operationId: 'op-1',
-          price: 51000,
-          date: new Date('2024-01-01T00:00:00.000Z'),
-        },
-      });
-      expect(result).toEqual(mockPrice);
-    });
-
-    it('should throw NotFoundException if operation not found', async () => {
-      mockPrismaService.operations.findUnique.mockResolvedValue(null);
-
-      await expect(service.addPrice('invalid-id', priceDto)).rejects.toThrow(
         NotFoundException,
       );
     });

@@ -20,7 +20,7 @@ interface OperationEntry {
  */
 interface PriceHistory {
   id: string;
-  operationId: string;
+  symbolId?: string;
   price: number;
   date: string;
   createdAt: string;
@@ -58,9 +58,9 @@ interface Operation {
     code: string;
     name: string;
     logo?: string;
+    priceHistory?: PriceHistory[];
   };
   entries?: OperationEntry[];
-  prices?: PriceHistory[];
   // Métricas calculadas (solo para operaciones abiertas)
   metrics?: OperationMetrics;
 }
@@ -94,11 +94,14 @@ interface NewEntryDto {
 }
 
 /**
- * DTO para añadir un precio histórico
+ * DTO para actualizar una entrada
  */
-interface NewPriceHistoryDto {
-  price: number;
-  date: string;
+interface UpdateEntryDto {
+  entryType?: string;
+  quantity?: number;
+  price?: number;
+  tax?: number;
+  date?: string;
 }
 
 interface OperationsState {
@@ -227,6 +230,31 @@ export const useOperationsStore = defineStore('operations', {
     },
 
     /**
+     * Actualizar una entrada
+     */
+    async updateEntry(operationId: string, entryId: string, payload: UpdateEntryDto) {
+      try {
+        this.loading = true;
+        this.error = null;
+        const { data } = await api.put(
+          `/operations/${operationId}/entries/${entryId}`,
+          payload
+        );
+        // Actualizar la operación actual
+        if (this.currentOperation?.id === operationId) {
+          await this.fetchOperationDetail(operationId);
+        }
+        return data;
+      } catch (error) {
+        console.error('Error updating entry:', error);
+        this.error = 'Error al actualizar entrada';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
      * Eliminar una entrada
      */
     async deleteEntry(operationId: string, entryId: string) {
@@ -241,31 +269,6 @@ export const useOperationsStore = defineStore('operations', {
       } catch (error) {
         console.error('Error deleting entry:', error);
         this.error = 'Error al eliminar entrada';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    /**
-     * Añadir un precio histórico
-     */
-    async addPriceHistory(operationId: string, payload: NewPriceHistoryDto) {
-      try {
-        this.loading = true;
-        this.error = null;
-        const { data } = await api.post(
-          `/operations/${operationId}/prices`,
-          payload
-        );
-        // Actualizar la operación actual
-        if (this.currentOperation?.id === operationId) {
-          await this.fetchOperationDetail(operationId);
-        }
-        return data;
-      } catch (error) {
-        console.error('Error adding price history:', error);
-        this.error = 'Error al añadir precio histórico';
         throw error;
       } finally {
         this.loading = false;

@@ -2,7 +2,7 @@
   <q-dialog :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
     <q-card style="min-width: 400px">
       <q-card-section>
-        <div class="text-h6">Nueva entrada</div>
+        <div class="text-h6">{{ isEdit ? 'Editar entrada' : 'Nueva entrada' }}</div>
       </q-card-section>
 
       <q-card-section class="q-pt-none">
@@ -73,16 +73,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useOperationsStore } from '../OperationsStore';
 import { entryTypes } from 'src/config';
 import dayjs from 'dayjs';
 import InputCalendar from 'src/components/InputCalendar.vue';
 import { useQuasar } from 'quasar';
 
+interface Entry {
+  id?: string;
+  entryType: string;
+  quantity: number;
+  price: number;
+  tax: number;
+  date: string;
+}
+
 const props = defineProps<{
   modelValue: boolean;
   operationId: string;
+  editEntry?: Entry | null;
 }>();
 
 const emit = defineEmits<{
@@ -95,13 +105,44 @@ const $q = useQuasar();
 
 const saving = ref(false);
 
-const entry = ref({
+const entry = ref<Entry>({
   entryType: 'buy',
   quantity: 0,
   price: 0,
   tax: 0,
   date: dayjs().format('YYYY-MM-DD HH:mm'),
 });
+
+const isEdit = computed(() => !!props.editEntry);
+
+// Cuando cambia editEntry, cargar los datos
+watch(
+  () => props.editEntry,
+  (newEntry) => {
+    if (newEntry) {
+      const newValue: Entry = {
+        entryType: newEntry.entryType,
+        quantity: newEntry.quantity,
+        price: newEntry.price,
+        tax: newEntry.tax || 0,
+        date: dayjs(newEntry.date).format('YYYY-MM-DD HH:mm'),
+      };
+      if (newEntry.id) {
+        newValue.id = newEntry.id;
+      }
+      entry.value = newValue;
+    } else {
+      entry.value = {
+        entryType: 'buy',
+        quantity: 0,
+        price: 0,
+        tax: 0,
+        date: dayjs().format('YYYY-MM-DD HH:mm'),
+      };
+    }
+  },
+  { immediate: true }
+);
 
 const entryTypeOptions = entryTypes.map((e) => ({
   label: e.label,
@@ -112,12 +153,23 @@ const save = async () => {
   saving.value = true;
 
   try {
-    await operationsStore.addEntry(props.operationId, entry.value);
-
-    $q.notify({
-      type: 'positive',
-      message: 'Entrada añadida correctamente',
-    });
+    if (isEdit.value && entry.value.id) {
+      await operationsStore.updateEntry(
+        props.operationId,
+        entry.value.id,
+        entry.value
+      );
+      $q.notify({
+        type: 'positive',
+        message: 'Entrada actualizada correctamente',
+      });
+    } else {
+      await operationsStore.addEntry(props.operationId, entry.value);
+      $q.notify({
+        type: 'positive',
+        message: 'Entrada añadida correctamente',
+      });
+    }
 
     // Resetear formulario
     entry.value = {
@@ -131,10 +183,10 @@ const save = async () => {
     emit('update:modelValue', false);
     emit('saved');
   } catch (error) {
-    console.error('Error adding entry:', error);
+    console.error('Error saving entry:', error);
     $q.notify({
       type: 'negative',
-      message: 'Error al añadir entrada',
+      message: isEdit.value ? 'Error al actualizar entrada' : 'Error al añadir entrada',
     });
   } finally {
     saving.value = false;

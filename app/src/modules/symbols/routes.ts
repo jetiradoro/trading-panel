@@ -13,6 +13,11 @@ export default {
       component: () => import('./pages/SymbolFormPage.vue'),
     },
     {
+      path: ':id',
+      name: 'symbols.detail',
+      component: () => import('./pages/SymbolDetailPage.vue'),
+    },
+    {
       path: ':id/edit',
       name: 'symbols.edit',
       component: () => import('./pages/SymbolFormPage.vue'),
