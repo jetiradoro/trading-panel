@@ -1,6 +1,6 @@
 # Tracking: Módulo de Analítica
 
-## Estado General: ⏳ En progreso (Fases 1-4 completadas)
+## Estado General: ✅ Completado (Todas las fases completadas)
 
 ---
 
@@ -87,44 +87,60 @@
 ---
 
 ### Fase 5: Gráficos
-**Estado**: ⏳ Pendiente
+**Estado**: ✅ Completada
 
-- [ ] Endpoint `GET /analytics/portfolio-evolution`
-- [ ] Endpoint `GET /analytics/product-distribution`
-- [ ] Tests endpoints
-- [ ] Componente `PortfolioEvolutionChart.vue`
-- [ ] Componente `ProductDistributionChart.vue`
-- [ ] Validar ESLint/Vue
+- [x] Endpoint `GET /analytics/portfolio-evolution`
+- [x] Endpoint `GET /analytics/product-distribution`
+- [x] Tests endpoints
+- [x] Componente `PortfolioEvolutionChart.vue`
+- [x] Componente `ProductDistributionChart.vue`
+- [x] Validar ESLint/Vue
 
 **Resumen**:
-<!-- Completar al finalizar fase -->
+- Endpoints `/analytics/portfolio-evolution` y `/analytics/product-distribution` ya implementados desde Fase 1
+- Tests controller: ✅ 2 tests adicionales pasando (portfolio-evolution + product-distribution)
+- Componente `PortfolioEvolutionChart.vue`: gráfico de área mostrando evolución temporal de invertido vs valor portfolio, tooltip tema oscuro para contraste, leyenda con color #333
+- Componente `ProductDistributionChart.vue`: donut chart con distribución por producto (crypto/stock/etf), colores según paleta del plan, leyenda custom debajo
+- Integrados en `DashboardPage.vue` con carga de datos desde API
+- ESLint: ✅ sin errores
 
 ---
 
 ### Fase 6: Filtros y Navegación
-**Estado**: ⏳ Pendiente
+**Estado**: ✅ Completada
 
-- [ ] Componente `PeriodFilter.vue`
-- [ ] Store `AnalyticsStore.ts`
-- [ ] Configurar rutas
-- [ ] Añadir enlace Dashboard en `MainLayout.vue`
-- [ ] Validar ESLint/Vue
+- [x] Componente `PeriodFilter.vue`
+- [x] Store `AnalyticsStore.ts`
+- [x] Configurar rutas
+- [x] Añadir enlace Dashboard en `MainLayout.vue`
+- [x] Validar ESLint/Vue
 
 **Resumen**:
-<!-- Completar al finalizar fase -->
+- Componente `PeriodFilter.vue`: botones toggle para periodos 7d/30d/90d/1año/Todo
+- Store `AnalyticsStore.ts`: gestión centralizada de estado con Pinia, periodo seleccionado, carga de datos, función `changePeriod` para recargar datos dependientes
+- Rutas: ya configuradas en `/panel/dashboard` desde fases anteriores
+- MainLayout: enlace "Dashboard" ya existente apuntando a la ruta correcta
+- DashboardPage refactorizado para usar store y PeriodFilter en lugar de estado local
+- ESLint: ✅ sin errores
 
 ---
 
 ### Fase 7: Pulido Final
-**Estado**: ⏳ Pendiente
+**Estado**: ✅ Completada
 
-- [ ] Estados de carga (skeletons)
-- [ ] Responsive mobile
-- [ ] Manejo de errores
-- [ ] Documentación en `wiki/`
+- [x] Estados de carga (skeletons)
+- [x] Responsive mobile
+- [x] Manejo de errores
+- [x] Documentación en `wiki/`
 
 **Resumen**:
-<!-- Completar al finalizar fase -->
+- Estados de carga: ya implementados correctamente en todos los componentes con spinners y skeletons
+- Responsive: clases col-12/col-sm-4/col-md-4/col-md-8 en todos los componentes, PeriodFilter oculta etiqueta en móvil (gt-xs)
+- Manejo de errores: notificaciones Quasar en todas las funciones del store, estado error reactivo
+- Documentación técnica: `wiki/technical/analytics-api.md` con endpoints, DTOs, lógica de negocio, tests
+- Guía de usuario: `wiki/user-guide/analytics.md` con explicaciones simples, casos de uso, FAQs
+- README wiki actualizado con módulo de Analítica
+- ESLint: ✅ sin errores
 
 ---
 
