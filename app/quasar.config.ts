@@ -179,6 +179,11 @@ export default defineConfig((ctx) => {
       name: 'Trading Panel',
       short_name: 'TradingPanel',
       version: appVersion,
+      extendGenerateSWOptions (cfg) {
+        cfg.skipWaiting = true;
+        cfg.clientsClaim = true;
+        cfg.cleanupOutdatedCaches = true;
+      },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json',
       // extendManifestJson (json) {},

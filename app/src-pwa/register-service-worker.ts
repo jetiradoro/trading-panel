@@ -9,7 +9,7 @@ register(process.env.SERVICE_WORKER_FILE, {
   // to ServiceWorkerContainer.register()
   // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register#Parameter
 
-  // registrationOptions: { scope: './' },
+  registrationOptions: { updateViaCache: 'none' },
 
   ready (/* registration */) {
     // console.log('Service worker is active.')
@@ -28,7 +28,7 @@ register(process.env.SERVICE_WORKER_FILE, {
   },
 
   updated (/* registration */) {
-    // console.log('New content is available; please refresh.')
+    window.location.reload();
   },
 
   offline () {
