@@ -183,7 +183,7 @@ model price_history {
 
 ```typescript
 products: [
-  { code: 'crypto', label: 'Criptomoneda' },
+  { code: 'crypto', label: 'Cripto' },
   { code: 'stock', label: 'Accion' }
 ],
 operationTypes: [

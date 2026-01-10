@@ -39,6 +39,11 @@
 
         <template #option="scope">
           <q-item v-bind="scope.itemProps">
+            <q-item-section v-if="scope.opt.logo" avatar>
+              <q-avatar size="sm">
+                <img :src="scope.opt.logo" :alt="scope.opt.code" />
+              </q-avatar>
+            </q-item-section>
             <q-item-section>
               <q-item-label>{{ scope.opt.code }}</q-item-label>
               <q-item-label caption>{{ scope.opt.name }}</q-item-label>

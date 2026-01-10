@@ -9,7 +9,7 @@ export const config = {
  * Diccionarios para el módulo de operaciones
  */
 export const products = [
-  { code: 'crypto', label: 'Criptomoneda' },
+  { code: 'crypto', label: 'Cripto' },
   { code: 'stock', label: 'Acción' },
   { code: 'etf', label: 'ETF' },
 ];
@@ -25,6 +25,6 @@ export const entryTypes = [
 ];
 
 export const operationStatus = [
-  { code: 'open', label: 'Abierta', color: 'green' },
-  { code: 'closed', label: 'Cerrada', color: 'grey' },
+  { code: 'open', label: 'Abierta', color: 'open' },
+  { code: 'closed', label: 'Cerrada', color: 'red-5' },
 ];

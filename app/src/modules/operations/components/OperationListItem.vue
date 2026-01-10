@@ -7,7 +7,11 @@
         </div>
       </template>
 
-      <q-item clickable class="operation-item" @click="goToDetail">
+      <q-item
+        clickable
+        :class="['operation-item', operation.status === 'closed' ? 'text-negative' : '']"
+        @click="goToDetail"
+      >
         <q-item-section avatar>
           <q-avatar v-if="operation.symbol?.logo" size="md">
             <img :src="operation.symbol.logo" :alt="operation.symbol.code" />
@@ -50,6 +54,9 @@
               {{ pnlPercentageDisplay.text }}
             </span>
           </q-item-label>
+          <q-item-label v-if="operation.totalFees !== undefined" caption :class="statusColor">
+            Comisiones: {{ operation.totalFees.toFixed(2) }} €
+          </q-item-label>
           <q-item-label caption>
             <q-chip :color="statusColor" text-color="white" dense size="sm">
               {{ statusLabel }}
@@ -86,6 +93,7 @@ interface Operation {
   type: string;
   status: string;
   balance?: number;
+  totalFees?: number;
   createdAt: string;
   symbol?: {
     code: string;
@@ -121,7 +129,7 @@ const typeLabel = computed(() => {
 });
 
 const typeColor = computed(() => {
-  return props.operation.type === 'long' ? 'green' : 'orange';
+  return props.operation.type === 'long' ? 'open' : 'orange';
 });
 
 const statusLabel = computed(() => {
@@ -132,6 +140,10 @@ const statusLabel = computed(() => {
 const statusColor = computed(() => {
   const status = operationStatus.find((s) => s.code === props.operation.status);
   return status?.color || 'grey';
+});
+
+const negativeTextClass = computed(() => {
+  return props.operation.status === 'closed' ? 'text-dark' : 'text-negative';
 });
 
 const productIcon = computed(() => {
@@ -164,7 +176,7 @@ const pnlPercentageDisplay = computed(() => {
   return {
     value,
     text: formatPercentage(value),
-    className: value >= 0 ? 'text-positive' : 'text-negative',
+    className: value >= 0 ? 'text-positive' : negativeTextClass.value,
   };
 });
 

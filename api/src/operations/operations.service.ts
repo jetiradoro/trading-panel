@@ -17,47 +17,107 @@ export class OperationsService {
    * Calcula si una operación debe cerrarse automáticamente
    * Cierre cuando: sum(buy.qty) == sum(sell.qty)
    */
-  private async shouldCloseOperation(operationId: string, tx: any): Promise<boolean> {
+  private async shouldCloseOperation(
+    operationId: string,
+    tx: any,
+  ): Promise<boolean> {
     const entries = await tx.operation_entries.findMany({
       where: { operationId },
     });
 
     const buyQty = entries
-      .filter(e => e.entryType === 'buy')
+      .filter((e) => e.entryType === 'buy')
       .reduce((sum, e) => sum + Number(e.quantity), 0);
 
     const sellQty = entries
-      .filter(e => e.entryType === 'sell')
+      .filter((e) => e.entryType === 'sell')
       .reduce((sum, e) => sum + Number(e.quantity), 0);
 
     return buyQty === sellQty && buyQty > 0;
   }
 
   /**
-   * Calcula el balance de una operación cerrada
-   * Long: sellTotal - buyTotal - taxes
-   * Short: buyTotal - sellTotal - taxes
+   * Suma total de comisiones/impuestos de las entradas
    */
-  private async calculateBalance(operationId: string, operationType: string, tx: any): Promise<number> {
+  private calculateTotalFees(entries: any[]): number {
+    return (entries || []).reduce(
+      (sum: number, entry: any) => sum + Number(entry.tax || 0),
+      0,
+    );
+  }
+
+  /**
+   * Calcula el balance de una operación cerrada
+   * Long: sellTotal - buyTotal
+   * Short: buyTotal - sellTotal
+   */
+  private async calculateBalance(
+    operationId: string,
+    operationType: string,
+    tx: any,
+  ): Promise<number> {
     const entries = await tx.operation_entries.findMany({
       where: { operationId },
     });
 
     const buyTotal = entries
-      .filter(e => e.entryType === 'buy')
-      .reduce((sum, e) => sum + (Number(e.quantity) * Number(e.price)), 0);
+      .filter((e) => e.entryType === 'buy')
+      .reduce(
+        (sum, e) => sum + Number(e.quantity) * Number(e.price) + Number(e.tax),
+        0,
+      );
 
     const sellTotal = entries
-      .filter(e => e.entryType === 'sell')
-      .reduce((sum, e) => sum + (Number(e.quantity) * Number(e.price)), 0);
-
-    const totalTaxes = entries.reduce((sum, e) => sum + Number(e.tax), 0);
+      .filter((e) => e.entryType === 'sell')
+      .reduce(
+        (sum, e) => sum + Number(e.quantity) * Number(e.price) - Number(e.tax),
+        0,
+      );
 
     if (operationType === 'long') {
-      return sellTotal - buyTotal - totalTaxes;
+      return sellTotal - buyTotal;
     } else {
-      return buyTotal - sellTotal - totalTaxes;
+      return buyTotal - sellTotal;
     }
+  }
+
+  /**
+   * Actualizar estado de operación de forma manual
+   * closed: calcula balance, open: limpia balance
+   */
+  async updateStatus(
+    operationId: string,
+    status: 'open' | 'closed',
+  ): Promise<any> {
+    const operation = await this.prisma.operations.findUnique({
+      where: { id: operationId },
+    });
+
+    if (!operation) {
+      throw new NotFoundException(`Operation with id ${operationId} not found`);
+    }
+
+    if (status === 'open') {
+      await this.prisma.operations.update({
+        where: { id: operationId },
+        data: { status: 'open', balance: null },
+      });
+      return this.findOne(operationId);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const balance = await this.calculateBalance(
+        operationId,
+        operation.type,
+        tx,
+      );
+      await tx.operations.update({
+        where: { id: operationId },
+        data: { status: 'closed', balance },
+      });
+    });
+
+    return this.findOne(operationId);
   }
 
   /**
@@ -138,23 +198,30 @@ export class OperationsService {
           orderBy: { date: 'asc' },
         },
       },
-      orderBy: { createdAt: 'desc' },
+    });
+
+    operations.sort((a: any, b: any) => {
+      const aDate = a.entries?.[0]?.date ?? a.createdAt;
+      const bDate = b.entries?.[0]?.date ?? b.createdAt;
+      return bDate.getTime() - aDate.getTime();
     });
 
     // Calcular métricas para operaciones abiertas
     return operations.map((operation: any) => {
+      const totalFees = this.calculateTotalFees(operation.entries);
       if (operation.status === 'open') {
         const currentPrice = operation.symbol?.priceHistory?.[0]?.price;
         const metrics = this.calculateMetrics(
           operation,
-          currentPrice ? Number(currentPrice) : undefined
+          currentPrice ? Number(currentPrice) : undefined,
         );
         return {
           ...operation,
+          totalFees,
           metrics,
         };
       }
-      return operation;
+      return { ...operation, totalFees };
     });
   }
 
@@ -167,11 +234,20 @@ export class OperationsService {
     const buyEntries = entries.filter((e: any) => e.entryType === 'buy');
     const sellEntries = entries.filter((e: any) => e.entryType === 'sell');
 
-    const buyQty = buyEntries.reduce((sum: number, e: any) => sum + Number(e.quantity), 0);
-    const sellQty = sellEntries.reduce((sum: number, e: any) => sum + Number(e.quantity), 0);
+    const buyQty = buyEntries.reduce(
+      (sum: number, e: any) => sum + Number(e.quantity),
+      0,
+    );
+    const sellQty = sellEntries.reduce(
+      (sum: number, e: any) => sum + Number(e.quantity),
+      0,
+    );
     const currentQty = buyQty - sellQty;
 
-    const buyTotal = buyEntries.reduce((sum: number, e: any) => sum + (Number(e.quantity) * Number(e.price)), 0);
+    const buyTotal = buyEntries.reduce(
+      (sum: number, e: any) => sum + Number(e.quantity) * Number(e.price),
+      0,
+    );
     const avgBuyPrice = buyQty > 0 ? buyTotal / buyQty : 0;
 
     let unrealizedPnL: number | null = null;
@@ -229,22 +305,27 @@ export class OperationsService {
     if (!operation) {
       throw new NotFoundException(`Operation with id ${id} not found`);
     }
+    const totalFees = this.calculateTotalFees((operation as any).entries);
 
     // Si está abierta, calcular métricas
     if (operation.status === 'open') {
       const currentPrice = (operation as any).symbol?.priceHistory?.[0]?.price;
       const metrics = this.calculateMetrics(
         operation,
-        currentPrice ? Number(currentPrice) : undefined
+        currentPrice ? Number(currentPrice) : undefined,
       );
 
       return {
         ...operation,
+        totalFees,
         metrics,
       };
     }
 
-    return operation;
+    return {
+      ...operation,
+      totalFees,
+    };
   }
 
   /**
@@ -278,7 +359,11 @@ export class OperationsService {
       const shouldClose = await this.shouldCloseOperation(operationId, tx);
 
       if (shouldClose) {
-        const balance = await this.calculateBalance(operationId, operation.type, tx);
+        const balance = await this.calculateBalance(
+          operationId,
+          operation.type,
+          tx,
+        );
 
         await tx.operations.update({
           where: { id: operationId },
@@ -324,16 +409,37 @@ export class OperationsService {
    * Eliminar entrada de operación
    */
   async removeEntry(operationId: string, entryId: string): Promise<any> {
-    const entry = await this.prisma.operation_entries.findUnique({
-      where: { id: entryId },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const entry = await tx.operation_entries.findUnique({
+        where: { id: entryId },
+      });
 
-    if (!entry || entry.operationId !== operationId) {
-      throw new NotFoundException(`Entry with id ${entryId} not found`);
-    }
+      if (!entry || entry.operationId !== operationId) {
+        throw new NotFoundException(`Entry with id ${entryId} not found`);
+      }
 
-    return this.prisma.operation_entries.delete({
-      where: { id: entryId },
+      const operation = await tx.operations.findUnique({
+        where: { id: operationId },
+      });
+
+      if (!operation) {
+        throw new NotFoundException(
+          `Operation with id ${operationId} not found`,
+        );
+      }
+
+      const deletedEntry = await tx.operation_entries.delete({
+        where: { id: entryId },
+      });
+
+      if (operation.status === 'closed') {
+        await tx.operations.update({
+          where: { id: operationId },
+          data: { status: 'open', balance: null },
+        });
+      }
+
+      return deletedEntry;
     });
   }
 

@@ -5,7 +5,7 @@
         v-model="type"
         false-value="Gasto"
         true-value="Ingreso"
-        color="green"
+        color="open"
         :label="type"
         class="q-mb-md"
       />

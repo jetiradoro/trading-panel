@@ -51,6 +51,7 @@ interface Operation {
   type: string; // 'long' | 'short'
   status: string; // 'open' | 'closed'
   balance?: number;
+  totalFees?: number;
   createdAt: string;
   updatedAt: string;
   symbol?: {
@@ -123,11 +124,7 @@ export const useOperationsStore = defineStore('operations', {
     /**
      * Obtener todas las operaciones con filtros opcionales
      */
-    async fetchOperations(filters?: {
-      status?: string;
-      product?: string;
-      symbolId?: string;
-    }) {
+    async fetchOperations(filters?: { status?: string; product?: string; symbolId?: string }) {
       try {
         this.loading = true;
         this.error = null;
@@ -154,6 +151,7 @@ export const useOperationsStore = defineStore('operations', {
         this.loading = true;
         this.error = null;
         const { data } = await api.get(`/operations/${operationId}`);
+        console.log({ data });
         this.currentOperation = data;
         return data;
       } catch (error) {
@@ -211,10 +209,7 @@ export const useOperationsStore = defineStore('operations', {
       try {
         this.loading = true;
         this.error = null;
-        const { data } = await api.post(
-          `/operations/${operationId}/entries`,
-          payload
-        );
+        const { data } = await api.post(`/operations/${operationId}/entries`, payload);
         // Actualizar la operación actual si está cargada
         if (this.currentOperation?.id === operationId) {
           await this.fetchOperationDetail(operationId);
@@ -236,10 +231,7 @@ export const useOperationsStore = defineStore('operations', {
       try {
         this.loading = true;
         this.error = null;
-        const { data } = await api.put(
-          `/operations/${operationId}/entries/${entryId}`,
-          payload
-        );
+        const { data } = await api.put(`/operations/${operationId}/entries/${entryId}`, payload);
         // Actualizar la operación actual
         if (this.currentOperation?.id === operationId) {
           await this.fetchOperationDetail(operationId);
@@ -269,6 +261,31 @@ export const useOperationsStore = defineStore('operations', {
       } catch (error) {
         console.error('Error deleting entry:', error);
         this.error = 'Error al eliminar entrada';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Abrir o cerrar una operación de forma manual
+     */
+    async updateOperationStatus(operationId: string, status: 'open' | 'closed') {
+      try {
+        this.loading = true;
+        this.error = null;
+        const { data } = await api.patch(`/operations/${operationId}/status`, { status });
+        const index = this.operations.findIndex((op) => op.id === operationId);
+        if (index !== -1) {
+          this.operations[index] = { ...this.operations[index], ...data };
+        }
+        if (this.currentOperation?.id === operationId) {
+          this.currentOperation = data;
+        }
+        return data;
+      } catch (error) {
+        console.error('Error updating operation status:', error);
+        this.error = 'Error al actualizar estado de operación';
         throw error;
       } finally {
         this.loading = false;

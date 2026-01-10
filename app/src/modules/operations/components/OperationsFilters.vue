@@ -1,28 +1,35 @@
 <template>
   <div class="q-pa-md">
-    <div class="row q-gutter-md">
-      <q-select
+    <div class="row items-center q-col-gutter-md">
+      <div class="text-subtitle2 text-grey-8 col-12 col-md-auto">Estado</div>
+      <q-btn-toggle
         v-model="localFilters.status"
-        :options="statusOptions"
-        label="Estado"
-        outlined
-        dense
-        clearable
-        emit-value
-        map-options
-        class="col"
+        :options="statusTabs"
+        unelevated
+        rounded
+        no-caps
+        color="grey-2"
+        text-color="grey-8"
+        toggle-color="primary"
+        toggle-text-color="white"
+        size="md"
+        spread
+        class="col-12 col-md-auto"
         @update:model-value="emitFilters"
       />
-      <q-select
+      <div class="text-subtitle2 text-grey-8 col-12 col-md-auto">Producto</div>
+      <q-btn-toggle
         v-model="localFilters.product"
-        :options="productOptions"
-        label="Producto"
-        outlined
-        dense
-        clearable
-        emit-value
-        map-options
-        class="col"
+        :options="productToggleOptions"
+        rounded
+        no-caps
+        color="grey-2"
+        text-color="grey-8"
+        toggle-color="primary"
+        toggle-text-color="white"
+        size="md"
+        spread
+        class="col-12 col-md-auto"
         @update:model-value="emitFilters"
       />
     </div>
@@ -38,21 +45,28 @@ const emit = defineEmits<{
 }>();
 
 const localFilters = ref({
-  status: '',
-  product: '',
+  status: 'all',
+  product: 'all',
 });
 
-const statusOptions = operationStatus.map((s) => ({
-  label: s.label,
-  value: s.code,
-}));
+const statusTabs = [
+  { label: 'Todas', value: 'all' },
+  ...operationStatus.map((s) => ({ label: s.label, value: s.code })),
+];
 
-const productOptions = products.map((p) => ({
-  label: p.label,
-  value: p.code,
-}));
+const productToggleOptions = [
+  { label: 'Todos', value: 'all' },
+  ...products.map((p) => ({ label: p.label, value: p.code })),
+];
 
+/** Normaliza filtros para el listado. */
+const normalizeFilters = (filters: { status: string; product: string }) => ({
+  status: filters.status === 'all' ? '' : filters.status,
+  product: filters.product === 'all' ? '' : filters.product,
+});
+
+/** Emite filtros normalizados. */
 const emitFilters = () => {
-  emit('filter', localFilters.value);
+  emit('filter', normalizeFilters(localFilters.value));
 };
 </script>

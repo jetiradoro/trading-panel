@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import transactionsRoutes from '../modules/transactions/routes';
 import operationsRoutes from '../modules/operations/routes';
 import symbolsRoutes from '../modules/symbols/routes';
+import analyticsRoutes from '../modules/analytics/routes';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -38,6 +39,7 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  analyticsRoutes,
   transactionsRoutes,
   operationsRoutes,
   symbolsRoutes,

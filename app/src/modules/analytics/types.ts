@@ -1,0 +1,61 @@
+/**
+ * Tipos de datos para el módulo de analítica
+ */
+
+export interface AccountBalanceDto {
+  totalFromTransactions: number;
+  totalInvested: number;
+  availableCash: number;
+}
+
+export interface PerformanceDto {
+  realizedPnL: number;
+  unrealizedPnL: number;
+  totalPnL: number;
+  totalPnLPercentage: number;
+  winningOperations: number;
+  losingOperations: number;
+  winRate: number;
+}
+
+export interface SymbolPerformanceDto {
+  symbolId: string;
+  code: string;
+  name: string;
+  logo: string | null;
+  product: string;
+  totalInvested: number;
+  realizedPnL: number;
+  unrealizedPnL: number;
+  totalPnL: number;
+  pnlPercentage: number;
+  operationsCount: number;
+  sparklineData: number[];
+}
+
+export interface ProductDistributionDto {
+  product: string;
+  label: string;
+  totalInvested: number;
+  percentage: number;
+  operationsCount: number;
+  pnl: number;
+}
+
+export interface PortfolioPointDto {
+  date: string;
+  totalInvested: number;
+  portfolioValue: number;
+  pnl: number;
+}
+
+export interface DashboardResponseDto {
+  accountBalance: AccountBalanceDto;
+  performance: PerformanceDto;
+  symbolsRanking: SymbolPerformanceDto[];
+  productDistribution: ProductDistributionDto[];
+  portfolioEvolution: PortfolioPointDto[];
+  lastUpdated: string;
+}
+
+export type PeriodType = '7d' | '30d' | '90d' | '1y' | 'all';

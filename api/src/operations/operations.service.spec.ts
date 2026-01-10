@@ -172,7 +172,6 @@ describe('OperationsService', () => {
             orderBy: { date: 'asc' },
           },
         },
-        orderBy: { createdAt: 'desc' },
       });
       // Al ser operaciones abiertas, se agregan métricas
       expect(result[0]).toHaveProperty('metrics');
@@ -200,7 +199,6 @@ describe('OperationsService', () => {
             orderBy: { date: 'asc' },
           },
         },
-        orderBy: { createdAt: 'desc' },
       });
       // Al ser operaciones abiertas, se agregan métricas
       expect(result[0]).toHaveProperty('metrics');
@@ -292,6 +290,95 @@ describe('OperationsService', () => {
         NotFoundException,
       );
     });
+
+    it('should close operation and calculate balance when quantities match', async () => {
+      const entryDtoSell = {
+        ...entryDto,
+        entryType: 'sell',
+        quantity: 1,
+        price: 120,
+        tax: 10,
+      };
+      const mockTx = {
+        operation_entries: {
+          create: jest.fn().mockResolvedValue(mockEntry),
+          findMany: jest.fn().mockResolvedValue([
+            {
+              ...mockEntry,
+              entryType: 'buy',
+              quantity: 1,
+              price: 100,
+              tax: 10,
+            },
+            {
+              ...mockEntry,
+              id: 'entry-2',
+              entryType: 'sell',
+              quantity: 1,
+              price: 120,
+              tax: 10,
+            },
+          ]),
+        },
+        operations: {
+          update: jest.fn(),
+        },
+      };
+
+      mockPrismaService.operations.findUnique.mockResolvedValue({
+        ...mockOperation,
+        type: 'long',
+      });
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      const result = await service.addEntry('op-1', entryDtoSell);
+
+      expect(result).toEqual(mockEntry);
+      expect(mockTx.operations.update).toHaveBeenCalledWith({
+        where: { id: 'op-1' },
+        data: { status: 'closed', balance: 20 },
+      });
+    });
+
+    it('should keep operation open when quantities do not match', async () => {
+      const mockTx = {
+        operation_entries: {
+          create: jest.fn().mockResolvedValue(mockEntry),
+          findMany: jest.fn().mockResolvedValue([
+            {
+              ...mockEntry,
+              entryType: 'buy',
+              quantity: 2,
+              price: 100,
+              tax: 10,
+            },
+            {
+              ...mockEntry,
+              id: 'entry-2',
+              entryType: 'sell',
+              quantity: 1,
+              price: 120,
+              tax: 10,
+            },
+          ]),
+        },
+        operations: {
+          update: jest.fn(),
+        },
+      };
+
+      mockPrismaService.operations.findUnique.mockResolvedValue(mockOperation);
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      const result = await service.addEntry('op-1', entryDto);
+
+      expect(result).toEqual(mockEntry);
+      expect(mockTx.operations.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateEntry', () => {
@@ -343,24 +430,43 @@ describe('OperationsService', () => {
 
   describe('removeEntry', () => {
     it('should remove entry from operation', async () => {
-      mockPrismaService.operation_entries.findUnique.mockResolvedValue(
-        mockEntry,
-      );
-      mockPrismaService.operation_entries.delete.mockResolvedValue(mockEntry);
+      const mockTx = {
+        operation_entries: {
+          findUnique: jest.fn().mockResolvedValue(mockEntry),
+          delete: jest.fn().mockResolvedValue(mockEntry),
+        },
+        operations: {
+          findUnique: jest.fn().mockResolvedValue(mockOperation),
+          update: jest.fn(),
+        },
+      };
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
 
       const result = await service.removeEntry('op-1', 'entry-1');
 
-      expect(prisma.operation_entries.findUnique).toHaveBeenCalledWith({
+      expect(mockTx.operation_entries.findUnique).toHaveBeenCalledWith({
         where: { id: 'entry-1' },
       });
-      expect(prisma.operation_entries.delete).toHaveBeenCalledWith({
+      expect(mockTx.operation_entries.delete).toHaveBeenCalledWith({
         where: { id: 'entry-1' },
       });
       expect(result).toEqual(mockEntry);
     });
 
     it('should throw NotFoundException if entry not found', async () => {
-      mockPrismaService.operation_entries.findUnique.mockResolvedValue(null);
+      const mockTx = {
+        operation_entries: {
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+        operations: {
+          findUnique: jest.fn().mockResolvedValue(mockOperation),
+        },
+      };
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
 
       await expect(service.removeEntry('op-1', 'invalid-id')).rejects.toThrow(
         NotFoundException,
@@ -368,9 +474,19 @@ describe('OperationsService', () => {
     });
 
     it('should throw NotFoundException if entry does not belong to operation', async () => {
-      mockPrismaService.operation_entries.findUnique.mockResolvedValue({
-        ...mockEntry,
-        operationId: 'other-op',
+      const mockTx = {
+        operation_entries: {
+          findUnique: jest.fn().mockResolvedValue({
+            ...mockEntry,
+            operationId: 'other-op',
+          }),
+        },
+        operations: {
+          findUnique: jest.fn().mockResolvedValue(mockOperation),
+        },
+      };
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback(mockTx);
       });
 
       await expect(service.removeEntry('op-1', 'entry-1')).rejects.toThrow(

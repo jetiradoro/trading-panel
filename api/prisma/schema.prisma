@@ -55,6 +55,8 @@ model transactions {
 
   @@index([userId])
   @@index([origin])
+  @@index([userId, date])
+  @@index([accountId, date])
 }
 
 model symbols {
@@ -90,6 +92,9 @@ model operations {
   @@index([accountId])
   @@index([symbolId])
   @@index([status])
+  @@index([userId, status])
+  @@index([userId, status, updatedAt])
+  @@index([accountId, status])
 }
 
 model operation_entries {
@@ -105,6 +110,8 @@ model operation_entries {
   operation operations @relation(fields: [operationId], references: [id], onDelete: Cascade)
 
   @@index([operationId])
+  @@index([operationId, date])
+  @@index([operationId, entryType])
 }
 
 model price_history {
@@ -117,4 +124,5 @@ model price_history {
   symbol symbols @relation("SymbolPriceHistory", fields: [symbolId], references: [id], onDelete: Cascade)
 
   @@index([symbolId])
+  @@index([symbolId, date])
 }

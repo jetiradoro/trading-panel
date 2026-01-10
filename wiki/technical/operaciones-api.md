@@ -145,7 +145,7 @@ Listar operaciones del usuario con filtros opcionales.
 
 **Comportamiento**:
 - Filtrado automático por `userId` del usuario autenticado
-- Ordenamiento: `createdAt DESC` (más recientes primero)
+- Ordenamiento: primera entrada DESC (si no hay entries, usa `createdAt`)
 
 ---
 
@@ -166,6 +166,7 @@ Obtener detalle completo de una operación con cálculos en tiempo real.
   type: string;
   status: string;
   balance: number | null;
+  totalFees?: number;
   createdAt: Date;
   updatedAt: Date;
   symbol: {...};
@@ -226,6 +227,23 @@ Agregar entrada a una operación con cierre automático.
 
 ---
 
+### `PATCH /operations/:id/status`
+Actualizar estado de la operación manualmente.
+
+**Request Body**:
+```typescript
+{
+  status: 'open' | 'closed';
+}
+```
+
+**Comportamiento**:
+- `closed`: calcula `balance` y actualiza estado
+- `open`: limpia `balance` y actualiza estado
+- Requiere autenticación
+
+---
+
 ### `DELETE /operations/:id/entries/:entryId`
 Eliminar una entrada de una operación.
 
@@ -238,6 +256,9 @@ Eliminar una entrada de una operación.
 **Validaciones**:
 - Entrada debe existir
 - Entrada debe pertenecer a la operación especificada
+
+**Comportamiento**:
+- Si la operación estaba `closed`, se reabre automáticamente (`status='open'`, `balance=null`)
 
 **Errores**:
 - 404 - Entrada no encontrada o no coincide
@@ -332,8 +353,8 @@ Eliminar una operación.
 
 **`calculateBalance(operationId: string, operationType: string, tx: any): Promise<number>`**
 - Calcula balance para operación cerrada
-- Long: `sellTotal - buyTotal - taxes`
-- Short: `buyTotal - sellTotal - taxes`
+- Long: `sellTotal - buyTotal`
+- Short: `buyTotal - sellTotal`
 - Se ejecuta dentro de transacción
 
 **`calculateMetrics(operation: any, currentPrice?: number)`**
@@ -367,17 +388,21 @@ sum(entries[entryType='buy'].quantity) === sum(entries[entryType='sell'].quantit
 
 **Operaciones Long**:
 ```
-balance = totalVentas - totalCompras - totalTaxes
+balance = totalVentas - totalCompras
 ```
 
 Donde:
 - `totalVentas` = Σ(sell.quantity × sell.price)
 - `totalCompras` = Σ(buy.quantity × buy.price)
-- `totalTaxes` = Σ(entries.tax)
 
 **Operaciones Short**:
 ```
-balance = totalCompras - totalVentas - totalTaxes
+balance = totalCompras - totalVentas
+```
+
+**Comisiones totales** (informativo, no afecta balance):
+```
+totalFees = Σ(entries.tax)
 ```
 
 **Interpretación**:

@@ -12,6 +12,7 @@ import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SymbolsModule } from './symbols/symbols.module';
 import { OperationsModule } from './operations/operations.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OperationsModule } from './operations/operations.module';
     TransactionsModule,
     SymbolsModule,
     OperationsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

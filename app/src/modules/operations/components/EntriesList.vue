@@ -26,7 +26,9 @@
           </div>
 
           <div class="col-12 col-sm-4 entry-total">
-            <q-item-label>{{ (entry.quantity * entry.price).toFixed(2) }} €</q-item-label>
+            <q-item-label
+              >{{ (entry.quantity * entry.price + entry.tax).toFixed(2) }} €</q-item-label
+            >
             <q-item-label v-if="entry.tax > 0" caption>Comisión: {{ entry.tax }} €</q-item-label>
           </div>
         </div>
@@ -78,7 +80,7 @@ const entryTypeLabel = (type: string) => {
 };
 
 const entryTypeColor = (type: string) => {
-  return type === 'buy' ? 'green' : 'red';
+  return type === 'buy' ? 'open' : 'red';
 };
 
 const entryTypeIcon = (type: string) => {

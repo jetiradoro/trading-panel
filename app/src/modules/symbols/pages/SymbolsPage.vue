@@ -6,17 +6,25 @@
 
     <div v-else>
       <!-- Filtros -->
-      <q-select
-        v-model="filterProduct"
-        :options="productFilterOptions"
-        label="Filtrar por producto"
-        outlined
-        dense
-        clearable
-        emit-value
-        map-options
-        class="q-mb-md"
-      />
+      <div class="q-pa-md q-mb-sm">
+        <div class="row items-center q-col-gutter-md">
+          <div class="text-subtitle2 text-grey-8 col-12 col-md-auto">Producto</div>
+          <q-btn-toggle
+            v-model="filterProduct"
+            :options="productFilterOptions"
+            unelevated
+            rounded
+            no-caps
+            color="grey-2"
+            text-color="grey-8"
+            toggle-color="primary"
+            toggle-text-color="white"
+            size="md"
+            spread
+            class="col-12 col-md-auto"
+          />
+        </div>
+      </div>
 
       <!-- Lista de símbolos -->
       <q-list v-if="filteredSymbols.length > 0">

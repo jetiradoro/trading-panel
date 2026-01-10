@@ -39,11 +39,11 @@ const totalBalance = computed(() => operationsStore.totalBalance);
 watch(
   [openOperationsCount, totalBalance, isMobile],
   () => {
-    const balanceLabel = `Balance: ${totalBalance.value.toFixed(2)} €`;
-    const fullLabel = `Operaciones: ${openOperationsCount.value} abiertas | ${balanceLabel}`;
+    const balanceLabel = `Operaciones: ${totalBalance.value.toFixed(2)} €`;
+    const fullLabel = `Operaciones: ${openOperationsCount.value} abiertas | Balance: ${totalBalance.value.toFixed(2)} €`;
     appStore.setSection(isMobile.value ? balanceLabel : fullLabel);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const filteredOperations = computed(() => {

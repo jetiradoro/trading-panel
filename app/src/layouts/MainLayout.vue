@@ -64,6 +64,11 @@ const account = computed(() => accountStore.currentAccount);
 
 const linksList: EssentialLinkProps[] = [
   {
+    title: 'Dashboard',
+    icon: 'dashboard',
+    route_name: 'dashboard',
+  },
+  {
     title: 'Operaciones',
     icon: 'trending_up',
     route_name: 'operations',

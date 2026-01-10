@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -13,6 +14,7 @@ import { OperationsService } from './operations.service';
 import { CreateOperationDto } from './dto/create-operation.dto';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
+import { UpdateOperationStatusDto } from './dto/update-operation-status.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { AppClient } from '../common/decorators/app-client.decorator';
 import { users } from '@prisma/client';
@@ -49,6 +51,11 @@ export class OperationsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
+  }
+
+  @Patch(':id/status')
+  updateStatus(@Param('id') id: string, @Body() data: UpdateOperationStatusDto) {
+    return this.service.updateStatus(id, data.status);
   }
 
   @Post(':id/entries')

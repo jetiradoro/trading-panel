@@ -34,12 +34,26 @@
           <q-card flat bordered class="full-height">
             <q-card-section>
               <div class="text-caption text-grey">Balance</div>
-              <div
-                class="text-h6"
-                :class="operation.balance >= 0 ? 'text-positive' : 'text-negative'"
-              >
-                {{ operation.balance.toFixed(2) }} €
+              <div :class="balanceRowClass">
+                <div
+                  class="text-h6"
+                  :class="operation.balance >= 0 ? 'text-positive' : 'text-negative'"
+                >
+                  {{ operation.balance.toFixed(2) }} €
+                </div>
+                <div v-if="closedDurationDays !== null" class="text-caption text-grey">
+                  {{ closedDurationDays }} días abierta
+                </div>
               </div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <div class="col-6" v-if="operation.totalFees !== undefined">
+          <q-card flat bordered class="full-height">
+            <q-card-section>
+              <div class="text-caption text-grey">Comisiones</div>
+              <div class="text-h6">{{ operation.totalFees.toFixed(2) }} €</div>
             </q-card-section>
           </q-card>
         </div>
@@ -168,6 +182,20 @@
       <!-- Botones de acción -->
       <div class="q-mt-md row q-gutter-sm">
         <q-btn label="Volver" color="primary" :to="{ name: 'operations' }" />
+        <q-btn
+          v-if="operation.status === 'open'"
+          label="Cerrar operación"
+          color="warning"
+          outline
+          @click="confirmCloseOperation"
+        />
+        <q-btn
+          v-else
+          label="Reabrir operación"
+          color="primary"
+          outline
+          @click="confirmOpenOperation"
+        />
         <q-btn label="Eliminar operación" color="negative" outline @click="confirmDelete" />
       </div>
     </div>
@@ -244,7 +272,7 @@ const typeLabel = computed(() => {
 const typeColor = computed(() => {
   const op = operation.value;
   if (!op) return 'grey';
-  return op.type === 'long' ? 'green' : 'orange';
+  return op.type === 'long' ? 'open' : 'orange';
 });
 
 const statusLabel = computed(() => {
@@ -266,6 +294,39 @@ const productLabel = computed(() => {
   if (!op) return '';
   const product = products.find((p) => p.code === op.product);
   return product?.label || op.product;
+});
+
+const balanceRowClass = computed(() => {
+  return $q.screen.gt.xs
+    ? 'row items-baseline justify-between no-wrap q-mt-xs'
+    : 'column items-start q-mt-xs';
+});
+
+const closedDurationDays = computed(() => {
+  const op = operation.value;
+  if (!op || op.status !== 'closed') return null;
+  const entries = op.entries || [];
+  const [firstEntry] = entries;
+  if (!firstEntry) return null;
+
+  const oldestDate = entries.reduce((oldest, entry) => {
+    return new Date(entry.date).getTime() < new Date(oldest).getTime() ? entry.date : oldest;
+  }, firstEntry.date);
+
+  const closeEntryType = op.type === 'short' ? 'buy' : 'sell';
+  const closingEntries = entries.filter((entry) => entry.entryType === closeEntryType);
+  const source = closingEntries.length > 0 ? closingEntries : entries;
+  const [firstCloseEntry] = source;
+  if (!firstCloseEntry) return null;
+
+  const lastCloseDate = source.reduce((latest, entry) => {
+    return new Date(entry.date).getTime() > new Date(latest).getTime() ? entry.date : latest;
+  }, firstCloseEntry.date);
+
+  const diffMs = new Date(lastCloseDate).getTime() - new Date(oldestDate).getTime();
+  if (Number.isNaN(diffMs) || diffMs < 0) return null;
+
+  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 });
 
 const formatDate = (dateString: string) => {
@@ -321,6 +382,45 @@ const confirmDelete = () => {
   }).onOk(() => {
     void deleteOperation();
   });
+};
+
+const confirmCloseOperation = () => {
+  $q.dialog({
+    title: 'Cerrar operación',
+    message: '¿Quieres cerrar esta operación de forma manual?',
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    void updateOperationStatus('closed');
+  });
+};
+
+const confirmOpenOperation = () => {
+  $q.dialog({
+    title: 'Reabrir operación',
+    message: '¿Quieres reabrir esta operación?',
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    void updateOperationStatus('open');
+  });
+};
+
+const updateOperationStatus = async (status: 'open' | 'closed') => {
+  try {
+    await operationsStore.updateOperationStatus(operationId.value, status);
+    $q.notify({
+      type: 'positive',
+      message: status === 'closed' ? 'Operación cerrada' : 'Operación reabierta',
+    });
+    await refreshOperation();
+  } catch (error) {
+    console.error('Error updating operation status:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Error al actualizar estado de operación',
+    });
+  }
 };
 
 const deleteOperation = async () => {
