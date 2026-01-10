@@ -5,12 +5,10 @@
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
         <q-toolbar-title>
-          <q-btn flat :to="{ name: 'panel' }">{{ account?.name }}</q-btn>
+          <q-btn flat :to="{ name: 'dashboard' }">{{ account?.name }}</q-btn>
         </q-toolbar-title>
 
-        <q-badge color="black" text-color="white" class="q-mr-md">
-          v{{ appVersion }}
-        </q-badge>
+        <q-badge color="black" text-color="white" class="q-mr-md"> v{{ appVersion }} </q-badge>
 
         <UserMenu />
       </q-toolbar>
