@@ -32,6 +32,23 @@
         class="col-12 col-md-auto"
         @update:model-value="emitFilters"
       />
+      <div class="col" />
+      <div class="col-12 col-md-4">
+        <q-input
+          v-model="localFilters.search"
+          outlined
+          dense
+          clearable
+          debounce="250"
+          placeholder="Codigo o nombre"
+          class="full-width"
+          @update:model-value="emitFilters"
+        >
+          <template #append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </div>
     </div>
   </div>
 </template>
@@ -41,12 +58,13 @@ import { ref } from 'vue';
 import { operationStatus, products } from 'src/config';
 
 const emit = defineEmits<{
-  filter: [filters: { status: string; product: string }];
+  filter: [filters: { status: string; product: string; search: string }];
 }>();
 
 const localFilters = ref({
-  status: 'all',
+  status: 'open',
   product: 'all',
+  search: '',
 });
 
 const statusTabs = [
@@ -60,9 +78,10 @@ const productToggleOptions = [
 ];
 
 /** Normaliza filtros para el listado. */
-const normalizeFilters = (filters: { status: string; product: string }) => ({
+const normalizeFilters = (filters: { status: string; product: string; search: string }) => ({
   status: filters.status === 'all' ? '' : filters.status,
   product: filters.product === 'all' ? '' : filters.product,
+  search: filters.search?.trim() ?? '',
 });
 
 /** Emite filtros normalizados. */

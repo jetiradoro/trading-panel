@@ -532,6 +532,19 @@ Nota: `currentPrice` se obtiene del último registro en `price_history`. Si no e
 - ✅ Eliminar operación
 - ✅ Validación de operaciones cerradas
 
+---
+
+## Frontend - Gráfico de precio e inversión
+- **Fuente de datos**: `symbol.priceHistory` y `entries` en el detalle de operación.
+- **Detalle de operación**: retorna `priceHistory` del último año (ordenado desc).
+- **Precio**: serie de `priceHistory` ordenada por fecha.
+- **Inversión neta**: acumulado de entradas/salidas (`buy` suma, `sell` resta).
+- **Rango temporal**: filtro por periodos (7D, 1M, 3M, 6M, 1A, Todo).
+
+## Backend - Entradas y precios
+- Al crear una nueva entrada (`addEntry`) se registra también un precio en `price_history`
+  con el mismo `price` y `date` de la entrada.
+
 **Mocks**:
 - PrismaService con transacciones
 - Validación de cálculos de balance

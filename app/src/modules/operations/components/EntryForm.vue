@@ -22,9 +22,11 @@
           <div class="q-mb-md">
             <div class="row q-gutter-sm items-start">
               <q-input
+                ref="quantityInput"
                 v-model.number="entry.quantity"
                 type="number"
                 label="Cantidad"
+                placeholder="0"
                 outlined
                 dense
                 class="col"
@@ -52,6 +54,7 @@
             v-model.number="entry.price"
             type="number"
             label="Precio"
+            placeholder="0"
             outlined
             dense
             class="q-mb-md"
@@ -63,6 +66,7 @@
             v-model.number="entry.tax"
             type="number"
             label="Comisión"
+            placeholder="0"
             outlined
             dense
             class="q-mb-md"
@@ -86,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { useOperationsStore } from '../OperationsStore';
 import { entryTypes } from 'src/config';
 import dayjs from 'dayjs';
@@ -96,9 +100,9 @@ import { useQuasar } from 'quasar';
 interface Entry {
   id?: string;
   entryType: string;
-  quantity: number;
-  price: number;
-  tax: number;
+  quantity: number | null;
+  price: number | null;
+  tax: number | null;
   date: string;
 }
 
@@ -117,12 +121,13 @@ const operationsStore = useOperationsStore();
 const $q = useQuasar();
 
 const saving = ref(false);
+const quantityInput = ref<{ focus: () => void } | null>(null);
 
 const entry = ref<Entry>({
   entryType: 'buy',
-  quantity: 0,
-  price: 0,
-  tax: 0,
+  quantity: null,
+  price: null,
+  tax: null,
   date: dayjs().format('YYYY-MM-DD HH:mm'),
 });
 
@@ -159,14 +164,26 @@ watch(
     } else {
       entry.value = {
         entryType: 'buy',
-        quantity: 0,
-        price: 0,
-        tax: 0,
+        quantity: null,
+        price: null,
+        tax: null,
         date: dayjs().format('YYYY-MM-DD HH:mm'),
       };
     }
   },
   { immediate: true },
+);
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (!isOpen || isEdit.value) {
+      return;
+    }
+    void nextTick(() => {
+      quantityInput.value?.focus();
+    });
+  },
 );
 
 const entryTypeOptions = entryTypes.map((e) => ({
@@ -179,13 +196,25 @@ const save = async () => {
 
   try {
     if (isEdit.value && entry.value.id) {
-      await operationsStore.updateEntry(props.operationId, entry.value.id, entry.value);
+      const payload = {
+        ...entry.value,
+        quantity: entry.value.quantity ?? 0,
+        price: entry.value.price ?? 0,
+        tax: entry.value.tax ?? 0,
+      };
+      await operationsStore.updateEntry(props.operationId, entry.value.id, payload);
       $q.notify({
         type: 'positive',
         message: 'Entrada actualizada correctamente',
       });
     } else {
-      await operationsStore.addEntry(props.operationId, entry.value);
+      const payload = {
+        ...entry.value,
+        quantity: entry.value.quantity ?? 0,
+        price: entry.value.price ?? 0,
+        tax: entry.value.tax ?? 0,
+      };
+      await operationsStore.addEntry(props.operationId, payload);
       $q.notify({
         type: 'positive',
         message: 'Entrada añadida correctamente',
@@ -195,9 +224,9 @@ const save = async () => {
     // Resetear formulario
     entry.value = {
       entryType: 'buy',
-      quantity: 0,
-      price: 0,
-      tax: 0,
+      quantity: null,
+      price: null,
+      tax: null,
       date: dayjs().format('YYYY-MM-DD HH:mm'),
     };
 

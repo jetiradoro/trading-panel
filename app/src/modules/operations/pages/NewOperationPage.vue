@@ -39,16 +39,19 @@
         v-model.number="firstEntry.quantity"
         type="number"
         label="Cantidad"
+        placeholder="0"
         outlined
         dense
         class="q-mb-md"
         :rules="[(val) => val > 0 || 'Debe ser mayor que 0']"
+        ref="quantityInput"
       />
 
       <q-input
         v-model.number="firstEntry.price"
         type="number"
         label="Precio"
+        placeholder="0"
         outlined
         dense
         class="q-mb-md"
@@ -60,6 +63,7 @@
         v-model.number="firstEntry.tax"
         type="number"
         label="Comisión"
+        placeholder="0"
         outlined
         dense
         class="q-mb-md"
@@ -81,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 import { useAppStore } from 'src/stores/app';
 import { useOperationsStore } from '../OperationsStore';
 import { useAccountStore } from 'src/stores/account';
@@ -101,6 +105,7 @@ const router = useRouter();
 appStore.setSection('Nueva Operación');
 
 const loading = ref(false);
+const quantityInput = ref<{ focus: () => void } | null>(null);
 
 const operation = ref({
   symbolId: '',
@@ -110,9 +115,9 @@ const operation = ref({
 
 const firstEntry = ref({
   entryType: 'buy',
-  quantity: 0,
-  price: 0,
-  tax: 0,
+  quantity: null as number | null,
+  price: null as number | null,
+  tax: null as number | null,
   date: dayjs().format('YYYY-MM-DD HH:mm'),
 });
 
@@ -127,6 +132,11 @@ const entryTypeOptions = entryTypes.map((e) => ({
 }));
 
 const currentAccountId = computed(() => accountStore.currentAccount?.id);
+
+onMounted(async () => {
+  await nextTick();
+  quantityInput.value?.focus();
+});
 
 async function save() {
   if (!currentAccountId.value) {
@@ -148,12 +158,19 @@ async function save() {
   loading.value = true;
 
   try {
+    const payload = {
+      ...firstEntry.value,
+      quantity: firstEntry.value.quantity ?? 0,
+      price: firstEntry.value.price ?? 0,
+      tax: firstEntry.value.tax ?? 0,
+    };
+
     await operationsStore.createOperation({
       accountId: currentAccountId.value,
       symbolId: operation.value.symbolId,
       product: operation.value.product,
       type: operation.value.type,
-      firstEntry: firstEntry.value,
+      firstEntry: payload,
     });
 
     $q.notify({

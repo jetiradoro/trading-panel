@@ -1,7 +1,16 @@
 <template>
   <q-page>
     <OperationsFilters class="q-mt-md" @filter="handleFilter" />
-    <OperationsList class="q-mt-md" :operations="filteredOperations" @delete="handleDelete" />
+    <div class="row items-center justify-between text-caption text-grey-7 q-px-md q-mt-sm">
+      <div class="row items-center q-gutter-md">
+        <span>Trading P&L: {{ filteredTradingBalance.toFixed(2) }} €</span>
+        <span>Trading Invertido: {{ filteredTradingInvestment.toFixed(2) }} €</span>
+        <span>ETF P&L: {{ filteredEtfBalance.toFixed(2) }} €</span>
+        <span>ETF Invertido: {{ filteredEtfInvestment.toFixed(2) }} €</span>
+      </div>
+      <div>Resultados: {{ filteredOperations.length }}</div>
+    </div>
+    <OperationsList class="q-mt-md" :groups="groupedOperations" @delete="handleDelete" />
     <ActionsBtn />
   </q-page>
 </template>
@@ -21,8 +30,9 @@ const $q = useQuasar();
 const isMobile = computed(() => $q.screen.lt.md);
 
 const filters = ref({
-  status: '',
+  status: 'open',
   product: '',
+  search: '',
 });
 
 onMounted(async () => {
@@ -32,19 +42,6 @@ onMounted(async () => {
 onUnmounted(() => {
   appStore.setSection(null);
 });
-
-const openOperationsCount = computed(() => operationsStore.openOperations.length);
-const totalBalance = computed(() => operationsStore.totalBalance);
-
-watch(
-  [openOperationsCount, totalBalance, isMobile],
-  () => {
-    const balanceLabel = `Operaciones: ${totalBalance.value.toFixed(2)} €`;
-    const fullLabel = `Operaciones: ${openOperationsCount.value} abiertas | Balance: ${totalBalance.value.toFixed(2)} €`;
-    appStore.setSection(isMobile.value ? balanceLabel : fullLabel);
-  },
-  { immediate: true },
-);
 
 const filteredOperations = computed(() => {
   let ops = operationsStore.operations;
@@ -57,10 +54,104 @@ const filteredOperations = computed(() => {
     ops = ops.filter((op) => op.product === filters.value.product);
   }
 
+  const searchTerm = filters.value.search.trim().toLowerCase();
+  if (searchTerm) {
+    ops = ops.filter((op) => {
+      const code = op.symbol?.code ?? '';
+      const name = op.symbol?.name ?? '';
+      return `${code} ${name}`.toLowerCase().includes(searchTerm);
+    });
+  }
+
   return ops;
 });
 
-const handleFilter = (newFilters: { status: string; product: string }) => {
+const formatMonthLabel = (date: Date) => {
+  const label = date.toLocaleDateString('es-ES', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+const groupedOperations = computed(() => {
+  const groups: { title: string; operations: typeof filteredOperations.value }[] = [];
+  filteredOperations.value.forEach((op) => {
+    const dateString = op.entries?.[0]?.date ?? op.createdAt;
+    const date = new Date(dateString);
+    const title = formatMonthLabel(date);
+    const lastGroup = groups[groups.length - 1];
+    if (!lastGroup || lastGroup.title !== title) {
+      groups.push({ title, operations: [op] });
+    } else {
+      lastGroup.operations.push(op);
+    }
+  });
+  return groups;
+});
+
+const filteredOpenCount = computed(
+  () => filteredOperations.value.filter((op) => op.status === 'open').length,
+);
+
+const filteredEtfBalance = computed(() => {
+  return filteredOperations.value.reduce((acc, op) => {
+    if (op.product !== 'etf') {
+      return acc;
+    }
+    if (op.status === 'closed') {
+      return acc + (op.balance ?? 0);
+    }
+    if (op.status === 'open') {
+      return acc + (op.metrics?.unrealizedPnL ?? 0);
+    }
+    return acc;
+  }, 0);
+});
+
+const filteredTradingBalance = computed(() => {
+  return filteredOperations.value.reduce((acc, op) => {
+    if (op.product === 'etf') {
+      return acc;
+    }
+    if (op.status === 'closed') {
+      return acc + (op.balance ?? 0);
+    }
+    if (op.status === 'open') {
+      return acc + (op.metrics?.unrealizedPnL ?? 0);
+    }
+    return acc;
+  }, 0);
+});
+
+const filteredEtfInvestment = computed(() => {
+  return filteredOperations.value.reduce((acc, op) => {
+    if (op.product !== 'etf' || op.status !== 'open') {
+      return acc;
+    }
+    return acc + (op.metrics?.currentInvestment ?? 0);
+  }, 0);
+});
+
+const filteredTradingInvestment = computed(() => {
+  return filteredOperations.value.reduce((acc, op) => {
+    if (op.product === 'etf' || op.status !== 'open') {
+      return acc;
+    }
+    return acc + (op.metrics?.currentInvestment ?? 0);
+  }, 0);
+});
+
+watch(
+  [filteredOpenCount, isMobile],
+  () => {
+    const label = `Operaciones: ${filteredOpenCount.value} abiertas`;
+    appStore.setSection(label);
+  },
+  { immediate: true },
+);
+
+const handleFilter = (newFilters: { status: string; product: string; search: string }) => {
   filters.value = newFilters;
 };
 

@@ -18,7 +18,7 @@ const config = {
         : 5, //seconds
       expiration: process.env.JWT_EXPIRATION
         ? parseInt(process.env.JWT_EXPIRATION)
-        : 60, //seconds
+        : 3600, //seconds
     },
   },
   db: {

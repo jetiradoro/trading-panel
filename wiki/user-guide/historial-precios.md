@@ -95,6 +95,7 @@ Es el precio al que compraste o vendiste en una operación específica. Este NO 
 1. Ve a **Símbolos** en el menú
 2. Haz clic en el símbolo que quieres consultar (ej: BTC)
 3. Verás el historial de precios ordenado del más reciente al más antiguo
+> **Nota**: Se muestra el historial del último año.
 
 **Qué verás**:
 ```

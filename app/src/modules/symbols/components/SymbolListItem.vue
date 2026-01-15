@@ -15,6 +15,12 @@
         <q-item-label caption>{{ symbol.name }}</q-item-label>
       </q-item-section>
 
+      <q-item-section side class="text-right">
+        <q-item-label caption>P&amp;L total</q-item-label>
+        <q-item-label :class="pnlClass">{{ pnl.toFixed(2) }} €</q-item-label>
+        <q-item-label caption class="q-mt-xs">Operaciones: {{ operationsCount }}</q-item-label>
+      </q-item-section>
+
       <q-item-section side>
         <q-badge :color="productColor" :label="productLabel" />
       </q-item-section>
@@ -48,6 +54,8 @@ interface Symbol {
 
 const props = defineProps<{
   symbol: Symbol;
+  pnl: number;
+  operationsCount: number;
 }>();
 
 defineEmits<{
@@ -84,6 +92,10 @@ const productIcon = computed(() => {
     default:
       return 'help';
   }
+});
+
+const pnlClass = computed(() => {
+  return props.pnl >= 0 ? 'text-positive' : 'text-negative';
 });
 </script>
 

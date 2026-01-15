@@ -40,7 +40,6 @@ export class TransactionsController {
       throw new HttpException('No active account found', 400);
     }
     data.accountId = account.id;
-    console.log({ user, data });
     return this.service.createTransaction(data);
   }
 

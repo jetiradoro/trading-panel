@@ -106,6 +106,7 @@ Debe incluir:
 | Operaciones | ✅ Fase 2 | [Ver](./technical/operaciones-api.md) | [Ver](./user-guide/operaciones.md) |
 | Historial de Precios | ✅ Completado | [Ver](./technical/historial-precios.md) | [Ver](./user-guide/historial-precios.md) |
 | Analítica | ✅ Completado | [Ver](./technical/analytics-api.md) | [Ver](./user-guide/analytics.md) |
+| Autenticacion | ✅ Completado | [Ver](./technical/auth-api.md) | [Ver](./user-guide/auth.md) |
 
 ---
 

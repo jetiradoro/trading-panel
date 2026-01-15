@@ -143,6 +143,7 @@ Obtener historial de precios de un símbolo.
 ```
 
 **Ordenamiento**: Descendente por fecha (`date DESC`)
+**Rango**: Solo último año (por `date`)
 
 **Errores**:
 - `404` - Símbolo no encontrado

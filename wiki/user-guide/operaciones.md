@@ -105,6 +105,9 @@ Una vez creada la operación, puedes ir agregando compras y ventas.
    - **Fecha**: Cuándo la realizaste
 4. Haz clic en "Guardar"
 
+**Nota**: Cada entrada añade un punto al historial de precios del símbolo con el precio y fecha
+que introduzcas.
+
 **Cierre Automático**:
 El sistema verifica automáticamente si la cantidad total comprada es igual a la cantidad total vendida. Si coinciden, **la operación se cierra automáticamente** y se calcula tu ganancia o pérdida final.
 
@@ -147,6 +150,14 @@ Para ver tu P&L no realizado en operaciones abiertas, debes registrar precios ac
 5. Haz clic en "Guardar"
 
 El sistema usará el último precio que registraste para calcular tu ganancia o pérdida potencial.
+
+#### Gráfico de precio e inversión
+En el detalle de la operación verás un gráfico con:
+- **Precio**: evolución histórica del símbolo.
+- **Inversión neta**: movimientos según tus entradas y salidas.
+
+Usa el selector de tiempo (7D, 1M, 3M, 6M, 1A, Todo) para cambiar el rango mostrado.
+> **Nota**: El gráfico usa los precios del último año.
 
 ---
 

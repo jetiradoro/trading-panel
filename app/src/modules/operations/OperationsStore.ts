@@ -151,7 +151,6 @@ export const useOperationsStore = defineStore('operations', {
         this.loading = true;
         this.error = null;
         const { data } = await api.get(`/operations/${operationId}`);
-        console.log({ data });
         this.currentOperation = data;
         return data;
       } catch (error) {

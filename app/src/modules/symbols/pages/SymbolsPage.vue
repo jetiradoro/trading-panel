@@ -23,7 +23,27 @@
             spread
             class="col-12 col-md-auto"
           />
+          <div class="col" />
+          <div class="col-12 col-md-4">
+            <q-input
+              v-model="search"
+              outlined
+              dense
+              clearable
+              debounce="250"
+              placeholder="Buscar por codigo o nombre"
+              class="full-width"
+            >
+              <template #append>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </div>
         </div>
+      </div>
+
+      <div class="text-caption text-grey-7 text-right q-px-md q-mt-sm">
+        Resultados: {{ filteredSymbols.length }}
       </div>
 
       <!-- Lista de símbolos -->
@@ -32,6 +52,8 @@
           v-for="symbol in filteredSymbols"
           :key="symbol.id"
           :symbol="symbol"
+          :pnl="symbolPnLMap[symbol.id] ?? 0"
+          :operations-count="symbolOperationsCountMap[symbol.id] ?? 0"
           @click="editSymbol(symbol.id)"
           @delete="handleDelete(symbol)"
         />
@@ -52,12 +74,14 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppStore } from 'src/stores/app';
 import { useSymbolsStore } from '../SymbolsStore';
+import { useOperationsStore } from 'src/modules/operations/OperationsStore';
 import { products } from 'src/config';
 import { useQuasar } from 'quasar';
 import SymbolListItem from '../components/SymbolListItem.vue';
 
 const appStore = useAppStore();
 const symbolsStore = useSymbolsStore();
+const operationsStore = useOperationsStore();
 const router = useRouter();
 const $q = useQuasar();
 
@@ -65,11 +89,13 @@ appStore.setSection('Símbolos');
 
 const loading = ref(false);
 const filterProduct = ref('');
+const search = ref('');
 
 onMounted(async () => {
   loading.value = true;
   try {
     await symbolsStore.fetchSymbols();
+    await operationsStore.fetchOperations();
   } finally {
     loading.value = false;
   }
@@ -81,8 +107,45 @@ const productFilterOptions = [
 ];
 
 const filteredSymbols = computed(() => {
-  if (!filterProduct.value) return symbolsStore.symbols;
-  return symbolsStore.symbols.filter((s) => s.product === filterProduct.value);
+  let items = symbolsStore.symbols;
+  if (filterProduct.value) {
+    items = items.filter((s) => s.product === filterProduct.value);
+  }
+  const searchTerm = search.value.trim().toLowerCase();
+  if (searchTerm) {
+    items = items.filter((s) => {
+      return `${s.code} ${s.name}`.toLowerCase().includes(searchTerm);
+    });
+  }
+  return items;
+});
+
+const symbolPnLMap = computed(() => {
+  return operationsStore.operations.reduce((acc, op) => {
+    const symbolId = op.symbolId;
+    if (!symbolId) {
+      return acc;
+    }
+    let pnl = 0;
+    if (op.status === 'closed') {
+      pnl = op.balance ?? 0;
+    } else if (op.status === 'open') {
+      pnl = op.metrics?.unrealizedPnL ?? 0;
+    }
+    acc[symbolId] = (acc[symbolId] ?? 0) + pnl;
+    return acc;
+  }, {} as Record<string, number>);
+});
+
+const symbolOperationsCountMap = computed(() => {
+  return operationsStore.operations.reduce((acc, op) => {
+    const symbolId = op.symbolId;
+    if (!symbolId) {
+      return acc;
+    }
+    acc[symbolId] = (acc[symbolId] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 });
 
 const editSymbol = (symbolId: string) => {

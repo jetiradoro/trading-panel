@@ -75,6 +75,7 @@ export class AuthService {
 
   private setToken(user: users, res: Response): string {
     const now = Math.floor(Date.now() / 1000);
+    const refreshLifetimeDays = 7;
 
     const payload = {
       iss: this.config.get('app.jwt.issuer'),
@@ -88,7 +89,7 @@ export class AuthService {
     const token = this.jwt.sign(payload);
     //crea un refresh token aleatorio para el usuario encriptado
     const refreshToken = PasswordHelper.generateRandomPassword();
-    const expires_in = dayjs().add(1, 'days');
+    const expires_in = dayjs().add(refreshLifetimeDays, 'days');
     this.users.update(user.id, {
       refresh_token: refreshToken,
       token_expiration: expires_in.toDate(),
@@ -98,7 +99,7 @@ export class AuthService {
       httpOnly: true,
       secure: false,
       sameSite: 'lax', // or 'Strict' depending on your requirements
-      maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      maxAge: refreshLifetimeDays * 24 * 60 * 60 * 1000, // 7 days in ms
       path: '/auth/refresh',
     });
     return token;

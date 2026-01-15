@@ -131,8 +131,14 @@ export class SymbolsService {
   async getPrices(symbolId: string): Promise<any[]> {
     await this.findOne(symbolId);
 
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
     return this.prisma.price_history.findMany({
-      where: { symbolId },
+      where: {
+        symbolId,
+        date: { gte: oneYearAgo },
+      },
       orderBy: { date: 'desc' },
     });
   }

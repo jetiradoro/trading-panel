@@ -61,7 +61,7 @@ const submitForm = async () => {
     });
   } else {
     await accountStore.getCurrent();
-    await router.push({ name: 'panel' });
+    await router.push({ name: 'dashboard' });
   }
 };
 </script>

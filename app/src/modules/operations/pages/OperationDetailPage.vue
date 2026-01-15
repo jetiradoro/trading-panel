@@ -179,6 +179,13 @@
         </q-card-section>
       </q-card>
 
+      <OperationPriceInvestmentChart
+        v-if="operation"
+        :price-history="operation.symbol?.priceHistory || []"
+        :entries="operation.entries || []"
+        :symbol-code="operation.symbol?.code || ''"
+      />
+
       <!-- Botones de acción -->
       <div class="q-mt-md row q-gutter-sm">
         <q-btn label="Volver" color="primary" :to="{ name: 'operations' }" />
@@ -228,6 +235,7 @@ import { operationTypes, operationStatus, products } from 'src/config';
 import EntriesList from '../components/EntriesList.vue';
 import EntryForm from '../components/EntryForm.vue';
 import PriceHistoryForm from 'src/modules/symbols/components/PriceHistoryForm.vue';
+import OperationPriceInvestmentChart from '../components/OperationPriceInvestmentChart.vue';
 import { useQuasar } from 'quasar';
 
 const appStore = useAppStore();

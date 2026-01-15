@@ -189,7 +189,6 @@ export class OperationsService {
           include: {
             priceHistory: {
               orderBy: { date: 'desc' },
-              take: 1,
             },
           },
         },
@@ -284,14 +283,19 @@ export class OperationsService {
    * Obtener detalle de operación con entries y cálculos
    */
   async findOne(id: string): Promise<any> {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
     const operation = await this.prisma.operations.findUnique({
       where: { id },
       include: {
         symbol: {
           include: {
             priceHistory: {
+              where: {
+                date: { gte: oneYearAgo },
+              },
               orderBy: { date: 'desc' },
-              take: 1,
             },
           },
         },
@@ -335,6 +339,12 @@ export class OperationsService {
   async addEntry(operationId: string, data: CreateEntryDto): Promise<any> {
     const operation = await this.prisma.operations.findUnique({
       where: { id: operationId },
+      select: {
+        id: true,
+        status: true,
+        type: true,
+        symbolId: true,
+      },
     });
 
     if (!operation) {
@@ -346,14 +356,26 @@ export class OperationsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      const entryDate = new Date(data.date);
+
       // Crear la entrada
       const entry = await tx.operation_entries.create({
         data: {
           operationId,
           ...data,
-          date: new Date(data.date),
+          date: entryDate,
         },
       });
+
+      if (operation.symbolId) {
+        await tx.price_history.create({
+          data: {
+            symbolId: operation.symbolId,
+            price: data.price,
+            date: entryDate,
+          },
+        });
+      }
 
       // Verificar si debe cerrarse automáticamente
       const shouldClose = await this.shouldCloseOperation(operationId, tx);
