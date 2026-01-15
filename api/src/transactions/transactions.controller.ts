@@ -8,12 +8,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { AuthGuard } from '../auth/guards/auth.guard';
 import { TransactionsService } from './transactions.service';
-import { AccountsService } from 'src/accounts/accounts.service';
+import { AccountsService } from '../accounts/accounts.service';
 import { transactions } from '@prisma/client';
 import { NewTransactionDto } from './dtos/NewTransactionDto';
-import { AppClient } from 'src/common/decorators/app-client.decorator';
+import { AppClient } from '../common/decorators/app-client.decorator';
 import * as dayjs from 'dayjs';
 
 @Controller('transactions')
@@ -25,8 +25,16 @@ export class TransactionsController {
   ) {}
 
   @Get()
-  getCurrentTransactions(): Promise<Array<transactions>> {
-    return this.service.getTransactions({});
+  async getCurrentTransactions(
+    @AppClient() user,
+  ): Promise<Array<transactions>> {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.getTransactions({
+      where: { userId: user.id, accountId: account.id },
+    });
   }
 
   @Post()
@@ -44,9 +52,16 @@ export class TransactionsController {
   }
 
   @Delete(':id')
-  async removeById(@Param('id') id: string): Promise<boolean> {
+  async removeById(
+    @AppClient() user,
+    @Param('id') id: string,
+  ): Promise<boolean> {
     try {
-      await this.service.removeTransaction(id);
+      const account = await this.accountsService.findCurrentAccount(user.id);
+      if (!account) {
+        throw new HttpException('No active account found', 400);
+      }
+      await this.service.removeTransaction(id, user.id, account.id);
       return true;
     } catch (e) {
       console.error(e);

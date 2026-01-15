@@ -5,8 +5,26 @@
       <period-filter v-model="store.period" @update:model-value="onPeriodChange" class="col-auto" />
     </div>
 
+    <q-tabs
+      v-model="store.productScope"
+      dense
+      class="q-mb-lg"
+      active-color="primary"
+      indicator-color="primary"
+      @update:model-value="onProductChange"
+    >
+      <q-tab name="trading" icon="show_chart" label="Trading" />
+      <q-tab name="etf" icon="savings" label="Planes ETF" />
+    </q-tabs>
+
     <!-- Balance de cuenta -->
     <account-balance-cards
+      v-if="accountBalance"
+      :balance="accountBalance"
+      class="q-mb-lg"
+    />
+
+    <open-investment-summary
       v-if="accountBalance"
       :balance="accountBalance"
       class="q-mb-lg"
@@ -30,6 +48,8 @@
         <performance-summary
           v-if="performance"
           :performance="performance"
+          :scope-label="scopeLabel"
+          :period-label="periodLabel"
         />
 
         <!-- Skeleton mientras carga -->
@@ -56,6 +76,8 @@
       <portfolio-evolution-chart
         :data="portfolioEvolution || []"
         :loading="loadingCharts"
+        :scope-label="scopeLabel"
+        @range-change="onPortfolioRangeChange"
       />
     </div>
 
@@ -64,6 +86,8 @@
       <risk-metrics-cards
         :data="riskMetrics"
         :loading="loadingAdvanced"
+        :scope-label="scopeLabel"
+        :period-label="periodLabel"
       />
     </div>
 
@@ -74,6 +98,8 @@
         <monthly-performance-chart
           :data="monthlyPerformance || []"
           :loading="loadingAdvanced"
+          :scope-label="scopeLabel"
+          :period-label="periodLabel"
         />
       </div>
 
@@ -82,6 +108,8 @@
         <equity-curve-chart
           :data="equityCurve || []"
           :loading="loadingAdvanced"
+          :scope-label="scopeLabel"
+          :period-label="periodLabel"
         />
       </div>
     </div>
@@ -90,7 +118,8 @@
     <symbol-ranking-table
       v-if="symbolsRanking && symbolsRanking.length > 0"
       :symbols="symbolsRanking"
-      :limit="10"
+      :scope-label="scopeLabel"
+      :period-label="periodLabel"
     />
 
     <!-- Skeleton mientras carga -->
@@ -104,9 +133,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import AccountBalanceCards from '../components/AccountBalanceCards.vue';
+import OpenInvestmentSummary from '../components/OpenInvestmentSummary.vue';
 import PerformanceSummary from '../components/PerformanceSummary.vue';
 import SymbolRankingTable from '../components/SymbolRankingTable.vue';
 import PortfolioEvolutionChart from '../components/PortfolioEvolutionChart.vue';
@@ -136,6 +166,18 @@ const {
   loadingAdvanced,
 } = storeToRefs(store);
 
+const scopeLabel = computed(() => (store.productScope === 'etf' ? 'Planes ETF' : 'Trading'));
+const periodLabel = computed(() => {
+  const labels: Record<string, string> = {
+    '7d': '7D',
+    '30d': '30D',
+    '90d': '90D',
+    '1y': '1A',
+    all: 'Todo',
+  };
+  return labels[store.period] || store.period;
+});
+
 /**
  * Maneja el cambio de periodo
  */
@@ -143,10 +185,19 @@ async function onPeriodChange() {
   await store.changePeriod(store.period);
 }
 
+async function onProductChange() {
+  await store.changeProductScope(store.productScope);
+}
+
+async function onPortfolioRangeChange(range: '7d' | '1m' | '3m' | '6m' | '1y' | 'all') {
+  await store.setPortfolioRange(range);
+}
+
 /**
  * Carga inicial de datos
  */
 onMounted(async () => {
   await store.loadDashboard();
+  await store.setPortfolioRange('3m');
 });
 </script>

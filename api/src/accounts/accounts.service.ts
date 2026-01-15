@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { accounts } from '@prisma/client';
 import { toBoolean } from '../common/helpers/utils.helper';
 
@@ -34,14 +34,27 @@ export class AccountsService {
     });
   }
 
-  update(id: string, data: UpdateAccountDto): Promise<accounts> {
+  async update(id: string, data: UpdateAccountDto, userId: string): Promise<accounts> {
+    const account = await this.prisma.accounts.findFirst({
+      where: { id, userId },
+    });
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
+    const { userId: _ignored, ...safeData } = data;
     return this.prisma.accounts.update({
       where: { id },
-      data,
+      data: safeData,
     });
   }
 
-  remove(id: string) {
+  async remove(id: string, userId: string) {
+    const account = await this.prisma.accounts.findFirst({
+      where: { id, userId },
+    });
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
     return this.prisma.accounts.delete({ where: { id } });
   }
 

@@ -16,7 +16,7 @@
         :value="balance.totalInvested"
         format="currency"
         info-title="Dinero Invertido"
-        info-content="<p><strong>¿Qué muestra?</strong></p><p>El dinero que actualmente tienes invertido en operaciones abiertas.</p><p><strong>Cálculo:</strong> Para cada operación abierta, suma (Compras - Ventas) × Precio.</p><p>Este es el capital que está 'trabajando' en el mercado en este momento.</p>"
+        info-content="<p><strong>¿Qué muestra?</strong></p><p>El dinero que actualmente tienes invertido en operaciones abiertas (Trading y Planes ETF).</p><p><strong>Cálculo:</strong> Para cada operación abierta, suma (Compras - Ventas) × Precio.</p><p>Este es el capital que está 'trabajando' en el mercado en este momento.</p>"
       />
     </div>
 

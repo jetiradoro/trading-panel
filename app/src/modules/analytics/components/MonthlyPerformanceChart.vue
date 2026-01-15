@@ -2,7 +2,20 @@
   <q-card flat bordered>
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
-        <div class="text-h6">Rendimiento Mensual</div>
+        <div class="row items-center q-gutter-sm">
+          <div class="text-h6">Rendimiento Mensual</div>
+          <q-chip
+            v-if="scopeLabel"
+            dense
+            :color="scopeChipColor"
+            :text-color="scopeChipTextColor"
+          >
+            {{ scopeLabel }}
+          </q-chip>
+          <q-chip v-if="periodLabel" dense color="amber-1" text-color="amber-9">
+            Periodo {{ periodLabel }}
+          </q-chip>
+        </div>
         <q-btn
           icon="info"
           flat
@@ -49,6 +62,8 @@ import type { MonthlyPerformanceDto } from '../types';
 interface Props {
   data?: MonthlyPerformanceDto[];
   loading?: boolean;
+  scopeLabel?: string;
+  periodLabel?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -57,6 +72,12 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const showInfo = ref(false);
+const scopeChipColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'light-green-1' : 'light-blue-1'
+));
+const scopeChipTextColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'green-10' : 'blue-10'
+));
 
 const infoContent = `
 <p><strong>¿Qué muestra este gráfico?</strong></p>
@@ -72,6 +93,7 @@ const infoContent = `
   <li>La altura muestra la magnitud del resultado mensual</li>
 </ul>
 <p><strong>Utilidad:</strong> Identifica patrones estacionales o rachas de rendimiento.</p>
+<p><strong>Filtro aplicado:</strong> Este grafico respeta el periodo seleccionado y la pestaña activa.</p>
 `;
 
 /**

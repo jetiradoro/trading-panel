@@ -90,7 +90,7 @@ const infoContent = `
   <li><strong>ETFs</strong> (verde): Fondos cotizados</li>
 </ul>
 <p><strong>¿Cómo leerlo?</strong></p>
-<p>Muestra el porcentaje y valor invertido en cada categoría. Útil para diversificación y gestión de riesgo.</p>
+<p>Muestra el porcentaje y valor invertido en cada categoría. Es global (incluye Trading y Planes ETF).</p>
 `;
 
 /**

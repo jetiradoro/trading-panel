@@ -36,6 +36,8 @@ model accounts {
 
   transactions transactions[]
   operations   operations[]
+  symbols      symbols[]
+  priceHistory price_history[]
 
   @@index([userId])
 }
@@ -61,15 +63,22 @@ model transactions {
 
 model symbols {
   id        String   @id @default(cuid())
-  code      String   @unique
+  code      String
   name      String
   logo      String?
   product   String
+  userId    String
+  accountId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  account      accounts        @relation(fields: [accountId], references: [id], onDelete: Cascade)
   operations   operations[]
   priceHistory price_history[] @relation("SymbolPriceHistory")
+
+  @@index([userId])
+  @@index([accountId])
+  @@unique([accountId, code])
 }
 
 model operations {
@@ -117,12 +126,18 @@ model operation_entries {
 model price_history {
   id        String   @id @default(cuid())
   symbolId  String
+  userId    String
+  accountId String
   price     Float
   date      DateTime
   createdAt DateTime @default(now())
 
   symbol symbols @relation("SymbolPriceHistory", fields: [symbolId], references: [id], onDelete: Cascade)
+  account accounts @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([symbolId])
   @@index([symbolId, date])
+  @@index([userId])
+  @@index([accountId])
+  @@index([accountId, date])
 }

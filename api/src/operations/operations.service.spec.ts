@@ -8,10 +8,14 @@ describe('OperationsService', () => {
   let prisma: PrismaService;
 
   const mockPrismaService = {
+    accounts: {
+      findFirst: jest.fn(),
+    },
     operations: {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
     },
@@ -24,6 +28,9 @@ describe('OperationsService', () => {
     },
     price_history: {
       create: jest.fn(),
+    },
+    symbols: {
+      findFirst: jest.fn(),
     },
     $transaction: jest.fn(),
   };
@@ -91,6 +98,8 @@ describe('OperationsService', () => {
     };
 
     it('should create operation without first entry', async () => {
+      mockPrismaService.accounts.findFirst.mockResolvedValue({ id: 'acc-1' });
+      mockPrismaService.symbols.findFirst.mockResolvedValue({ id: 'symbol-1' });
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           operations: {
@@ -120,6 +129,8 @@ describe('OperationsService', () => {
         },
       };
 
+      mockPrismaService.accounts.findFirst.mockResolvedValue({ id: 'acc-1' });
+      mockPrismaService.symbols.findFirst.mockResolvedValue({ id: 'symbol-1' });
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           operations: {
@@ -148,6 +159,7 @@ describe('OperationsService', () => {
 
       const result = await service.findAll({
         userId: 'user-1',
+        accountId: 'acc-1',
         status: 'open',
         product: 'crypto',
       });
@@ -155,6 +167,7 @@ describe('OperationsService', () => {
       expect(prisma.operations.findMany).toHaveBeenCalledWith({
         where: {
           userId: 'user-1',
+          accountId: 'acc-1',
           status: 'open',
           product: 'crypto',
         },
@@ -162,8 +175,8 @@ describe('OperationsService', () => {
           symbol: {
             include: {
               priceHistory: {
+                where: { accountId: 'acc-1' },
                 orderBy: { date: 'desc' },
-                take: 1,
               },
             },
           },
@@ -181,16 +194,16 @@ describe('OperationsService', () => {
       const operations = [mockOperation];
       mockPrismaService.operations.findMany.mockResolvedValue(operations);
 
-      const result = await service.findAll({ userId: 'user-1' });
+      const result = await service.findAll({ userId: 'user-1', accountId: 'acc-1' });
 
       expect(prisma.operations.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
+        where: { userId: 'user-1', accountId: 'acc-1' },
         include: {
           symbol: {
             include: {
               priceHistory: {
+                where: { accountId: 'acc-1' },
                 orderBy: { date: 'desc' },
-                take: 1,
               },
             },
           },
@@ -215,20 +228,23 @@ describe('OperationsService', () => {
         prices: [mockPrice],
       };
 
-      mockPrismaService.operations.findUnique.mockResolvedValue(
+      mockPrismaService.operations.findFirst.mockResolvedValue(
         operationWithDetails,
       );
 
-      const result = await service.findOne('op-1');
+      const result = await service.findOne('op-1', 'user-1', 'acc-1');
 
-      expect(prisma.operations.findUnique).toHaveBeenCalledWith({
-        where: { id: 'op-1' },
+      expect(prisma.operations.findFirst).toHaveBeenCalledWith({
+        where: { id: 'op-1', userId: 'user-1', accountId: 'acc-1' },
         include: {
           symbol: {
             include: {
               priceHistory: {
+                where: {
+                  accountId: 'acc-1',
+                  date: expect.any(Object),
+                },
                 orderBy: { date: 'desc' },
-                take: 1,
               },
             },
           },
@@ -242,9 +258,9 @@ describe('OperationsService', () => {
     });
 
     it('should throw NotFoundException if operation not found', async () => {
-      mockPrismaService.operations.findUnique.mockResolvedValue(null);
+      mockPrismaService.operations.findFirst.mockResolvedValue(null);
 
-      await expect(service.findOne('invalid-id')).rejects.toThrow(
+      await expect(service.findOne('invalid-id', 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -268,25 +284,29 @@ describe('OperationsService', () => {
         operations: {
           update: jest.fn(),
         },
+        price_history: {
+          create: jest.fn(),
+        },
       };
 
-      mockPrismaService.operations.findUnique.mockResolvedValue(mockOperation);
+      mockPrismaService.operations.findFirst.mockResolvedValue(mockOperation);
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback(mockTx);
       });
 
-      const result = await service.addEntry('op-1', entryDto);
+      const result = await service.addEntry('op-1', entryDto, 'user-1', 'acc-1');
 
-      expect(prisma.operations.findUnique).toHaveBeenCalledWith({
-        where: { id: 'op-1' },
+      expect(prisma.operations.findFirst).toHaveBeenCalledWith({
+        where: { id: 'op-1', userId: 'user-1', accountId: 'acc-1' },
+        select: expect.any(Object),
       });
       expect(result).toEqual(mockEntry);
     });
 
     it('should throw NotFoundException if operation not found', async () => {
-      mockPrismaService.operations.findUnique.mockResolvedValue(null);
+      mockPrismaService.operations.findFirst.mockResolvedValue(null);
 
-      await expect(service.addEntry('invalid-id', entryDto)).rejects.toThrow(
+      await expect(service.addEntry('invalid-id', entryDto, 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -323,9 +343,12 @@ describe('OperationsService', () => {
         operations: {
           update: jest.fn(),
         },
+        price_history: {
+          create: jest.fn(),
+        },
       };
 
-      mockPrismaService.operations.findUnique.mockResolvedValue({
+      mockPrismaService.operations.findFirst.mockResolvedValue({
         ...mockOperation,
         type: 'long',
       });
@@ -333,12 +356,12 @@ describe('OperationsService', () => {
         return callback(mockTx);
       });
 
-      const result = await service.addEntry('op-1', entryDtoSell);
+      const result = await service.addEntry('op-1', entryDtoSell, 'user-1', 'acc-1');
 
       expect(result).toEqual(mockEntry);
       expect(mockTx.operations.update).toHaveBeenCalledWith({
         where: { id: 'op-1' },
-        data: { status: 'closed', balance: 20 },
+        data: { status: 'closed', balance: 0 },
       });
     });
 
@@ -367,14 +390,17 @@ describe('OperationsService', () => {
         operations: {
           update: jest.fn(),
         },
+        price_history: {
+          create: jest.fn(),
+        },
       };
 
-      mockPrismaService.operations.findUnique.mockResolvedValue(mockOperation);
+      mockPrismaService.operations.findFirst.mockResolvedValue(mockOperation);
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback(mockTx);
       });
 
-      const result = await service.addEntry('op-1', entryDto);
+      const result = await service.addEntry('op-1', entryDto, 'user-1', 'acc-1');
 
       expect(result).toEqual(mockEntry);
       expect(mockTx.operations.update).not.toHaveBeenCalled();
@@ -389,6 +415,7 @@ describe('OperationsService', () => {
 
     it('should update entry in operation', async () => {
       const updatedEntry = { ...mockEntry, ...updateDto };
+      mockPrismaService.operations.findFirst.mockResolvedValue(mockOperation);
       mockPrismaService.operation_entries.findUnique.mockResolvedValue(
         mockEntry,
       );
@@ -396,7 +423,7 @@ describe('OperationsService', () => {
         updatedEntry,
       );
 
-      const result = await service.updateEntry('op-1', 'entry-1', updateDto);
+      const result = await service.updateEntry('op-1', 'entry-1', updateDto, 'user-1', 'acc-1');
 
       expect(prisma.operation_entries.findUnique).toHaveBeenCalledWith({
         where: { id: 'entry-1' },
@@ -409,21 +436,23 @@ describe('OperationsService', () => {
     });
 
     it('should throw NotFoundException if entry not found', async () => {
+      mockPrismaService.operations.findFirst.mockResolvedValue(mockOperation);
       mockPrismaService.operation_entries.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.updateEntry('op-1', 'invalid-id', updateDto),
+        service.updateEntry('op-1', 'invalid-id', updateDto, 'user-1', 'acc-1'),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException if entry does not belong to operation', async () => {
+      mockPrismaService.operations.findFirst.mockResolvedValue(mockOperation);
       mockPrismaService.operation_entries.findUnique.mockResolvedValue({
         ...mockEntry,
         operationId: 'other-op',
       });
 
       await expect(
-        service.updateEntry('op-1', 'entry-1', updateDto),
+        service.updateEntry('op-1', 'entry-1', updateDto, 'user-1', 'acc-1'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -436,7 +465,7 @@ describe('OperationsService', () => {
           delete: jest.fn().mockResolvedValue(mockEntry),
         },
         operations: {
-          findUnique: jest.fn().mockResolvedValue(mockOperation),
+          findFirst: jest.fn().mockResolvedValue(mockOperation),
           update: jest.fn(),
         },
       };
@@ -444,7 +473,7 @@ describe('OperationsService', () => {
         return callback(mockTx);
       });
 
-      const result = await service.removeEntry('op-1', 'entry-1');
+      const result = await service.removeEntry('op-1', 'entry-1', 'user-1', 'acc-1');
 
       expect(mockTx.operation_entries.findUnique).toHaveBeenCalledWith({
         where: { id: 'entry-1' },
@@ -461,14 +490,14 @@ describe('OperationsService', () => {
           findUnique: jest.fn().mockResolvedValue(null),
         },
         operations: {
-          findUnique: jest.fn().mockResolvedValue(mockOperation),
+          findFirst: jest.fn().mockResolvedValue(mockOperation),
         },
       };
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback(mockTx);
       });
 
-      await expect(service.removeEntry('op-1', 'invalid-id')).rejects.toThrow(
+      await expect(service.removeEntry('op-1', 'invalid-id', 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -482,14 +511,14 @@ describe('OperationsService', () => {
           }),
         },
         operations: {
-          findUnique: jest.fn().mockResolvedValue(mockOperation),
+          findFirst: jest.fn().mockResolvedValue(mockOperation),
         },
       };
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback(mockTx);
       });
 
-      await expect(service.removeEntry('op-1', 'entry-1')).rejects.toThrow(
+      await expect(service.removeEntry('op-1', 'entry-1', 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -497,13 +526,13 @@ describe('OperationsService', () => {
 
   describe('remove', () => {
     it('should delete operation', async () => {
-      mockPrismaService.operations.findUnique.mockResolvedValue(mockOperation);
+      mockPrismaService.operations.findFirst.mockResolvedValue(mockOperation);
       mockPrismaService.operations.delete.mockResolvedValue(mockOperation);
 
-      const result = await service.remove('op-1');
+      const result = await service.remove('op-1', 'user-1', 'acc-1');
 
-      expect(prisma.operations.findUnique).toHaveBeenCalledWith({
-        where: { id: 'op-1' },
+      expect(prisma.operations.findFirst).toHaveBeenCalledWith({
+        where: { id: 'op-1', userId: 'user-1', accountId: 'acc-1' },
       });
       expect(prisma.operations.delete).toHaveBeenCalledWith({
         where: { id: 'op-1' },
@@ -512,9 +541,9 @@ describe('OperationsService', () => {
     });
 
     it('should throw NotFoundException if operation not found', async () => {
-      mockPrismaService.operations.findUnique.mockResolvedValue(null);
+      mockPrismaService.operations.findFirst.mockResolvedValue(null);
 
-      await expect(service.remove('invalid-id')).rejects.toThrow(
+      await expect(service.remove('invalid-id', 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
     });

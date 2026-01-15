@@ -12,6 +12,7 @@ import type {
   EquityPointDto,
   RiskMetricsDto,
   PeriodType,
+  ProductScope,
 } from './types';
 
 /**
@@ -21,6 +22,8 @@ import type {
 export const useAnalyticsStore = defineStore('analytics', () => {
   // Estado
   const period = ref<PeriodType>('30d');
+  const productScope = ref<ProductScope>('trading');
+  const portfolioRange = ref<'7d' | '1m' | '3m' | '6m' | '1y' | 'all'>('3m');
   const accountBalance = ref<AccountBalanceDto | null>(null);
   const performance = ref<PerformanceDto | null>(null);
   const symbolsRanking = ref<SymbolPerformanceDto[]>([]);
@@ -67,7 +70,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadingPerformance.value = true;
       error.value = null;
       const { data } = await api.get<PerformanceDto>('/analytics/performance', {
-        params: { period: period.value },
+        params: { period: period.value, product: productScope.value },
       });
       performance.value = data;
     } catch (err) {
@@ -91,7 +94,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadingRanking.value = true;
       error.value = null;
       const { data } = await api.get<SymbolPerformanceDto[]>('/analytics/symbols-ranking', {
-        params: { period: period.value },
+        params: { period: period.value, product: productScope.value },
       });
       symbolsRanking.value = data;
     } catch (err) {
@@ -132,12 +135,12 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   /**
    * Carga la evolución del portfolio
    */
-  async function loadPortfolioEvolution() {
+  async function loadPortfolioEvolution(range?: string) {
     try {
       loadingCharts.value = true;
       error.value = null;
       const { data } = await api.get<PortfolioPointDto[]>('/analytics/portfolio-evolution', {
-        params: { period: period.value },
+        params: { period: range || portfolioRange.value, product: productScope.value },
       });
       portfolioEvolution.value = data;
     } catch (err) {
@@ -161,7 +164,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadingAdvanced.value = true;
       error.value = null;
       const { data } = await api.get<MonthlyPerformanceDto[]>('/analytics/monthly-performance', {
-        params: { period: period.value },
+        params: { period: period.value, product: productScope.value },
       });
       monthlyPerformance.value = data;
     } catch (err) {
@@ -185,7 +188,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadingAdvanced.value = true;
       error.value = null;
       const { data } = await api.get<EquityPointDto[]>('/analytics/equity-curve', {
-        params: { period: period.value },
+        params: { period: period.value, product: productScope.value },
       });
       equityCurve.value = data;
     } catch (err) {
@@ -209,7 +212,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadingAdvanced.value = true;
       error.value = null;
       const { data } = await api.get<RiskMetricsDto>('/analytics/risk-metrics', {
-        params: { period: period.value },
+        params: { period: period.value, product: productScope.value },
       });
       riskMetrics.value = data;
     } catch (err) {
@@ -234,7 +237,6 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       loadPerformance(),
       loadSymbolsRanking(),
       loadProductDistribution(),
-      loadPortfolioEvolution(),
       loadMonthlyPerformance(),
       loadEquityCurve(),
       loadRiskMetrics(),
@@ -248,7 +250,6 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     await Promise.all([
       loadPerformance(),
       loadSymbolsRanking(),
-      loadPortfolioEvolution(),
       loadMonthlyPerformance(),
       loadEquityCurve(),
       loadRiskMetrics(),
@@ -263,9 +264,28 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     await reloadPeriodData();
   }
 
+  /**
+   * Cambia el alcance de producto y recarga datos
+   */
+  async function changeProductScope(newScope: ProductScope) {
+    productScope.value = newScope;
+    await loadDashboard();
+    await loadPortfolioEvolution(portfolioRange.value);
+  }
+
+  /**
+   * Cambia el rango del portfolio y recarga datos
+   */
+  async function setPortfolioRange(newRange: typeof portfolioRange.value) {
+    portfolioRange.value = newRange;
+    await loadPortfolioEvolution(newRange);
+  }
+
   return {
     // Estado
     period,
+    productScope,
+    portfolioRange,
     accountBalance,
     performance,
     symbolsRanking,
@@ -284,5 +304,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     // Acciones
     loadDashboard,
     changePeriod,
+    changeProductScope,
+    setPortfolioRange,
   };
 });

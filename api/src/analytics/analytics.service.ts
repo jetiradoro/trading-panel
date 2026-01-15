@@ -28,6 +28,12 @@ export class AnalyticsService {
     switch (period) {
       case '7d':
         return new Date(now.setDate(now.getDate() - 7));
+      case '1m':
+        return new Date(now.setMonth(now.getMonth() - 1));
+      case '3m':
+        return new Date(now.setMonth(now.getMonth() - 3));
+      case '6m':
+        return new Date(now.setMonth(now.getMonth() - 6));
       case '30d':
         return new Date(now.setDate(now.getDate() - 30));
       case '90d':
@@ -38,6 +44,27 @@ export class AnalyticsService {
       default:
         return null;
     }
+  }
+
+  /**
+   * Fecha de cierre basada en la ultima entrada registrada
+   */
+  private getOperationCloseDate(
+    entries?: { date: Date }[],
+    fallback?: Date,
+  ): Date | null {
+    const entryDate = entries && entries.length > 0 ? new Date(entries[0].date) : null;
+    return entryDate || fallback || null;
+  }
+
+  /**
+   * Filtro de producto para separar Trading vs ETFs
+   */
+  private getProductFilter(product?: 'trading' | 'etf') {
+    if (!product) return undefined;
+    return product === 'etf'
+      ? { product: 'etf' }
+      : { product: { not: 'etf' } };
   }
 
   /**
@@ -63,10 +90,22 @@ export class AnalyticsService {
         status: 'open',
         ...(accountId && { accountId }),
       },
-      include: { entries: true },
+      include: {
+        entries: true,
+        symbol: {
+          include: {
+            priceHistory: { orderBy: { date: 'desc' }, take: 1 },
+          },
+        },
+      },
     });
 
     let totalInvested = 0;
+    let investedTrading = 0;
+    let investedEtf = 0;
+    let openPnLTrading = 0;
+    let openPnLEtf = 0;
+
     for (const op of openOperations) {
       const buyTotal = op.entries
         .filter((e) => e.entryType === 'buy')
@@ -74,15 +113,61 @@ export class AnalyticsService {
       const sellTotal = op.entries
         .filter((e) => e.entryType === 'sell')
         .reduce((sum, e) => sum + Number(e.quantity) * Number(e.price), 0);
-      totalInvested += buyTotal - sellTotal;
+      const invested = buyTotal - sellTotal;
+      totalInvested += invested;
+
+      if (op.product === 'etf') {
+        investedEtf += invested;
+      } else {
+        investedTrading += invested;
+      }
+
+      const currentPrice = op.symbol?.priceHistory?.[0]?.price;
+      if (!currentPrice) continue;
+
+      const buyQty = op.entries
+        .filter((e) => e.entryType === 'buy')
+        .reduce((sum, e) => sum + Number(e.quantity), 0);
+      const sellQty = op.entries
+        .filter((e) => e.entryType === 'sell')
+        .reduce((sum, e) => sum + Number(e.quantity), 0);
+      const currentQty = buyQty - sellQty;
+
+      if (currentQty <= 0) continue;
+
+      const buyTotalForPnL = op.entries
+        .filter((e) => e.entryType === 'buy')
+        .reduce((sum, e) => sum + Number(e.quantity) * Number(e.price), 0);
+      const avgBuyPrice = buyQty > 0 ? buyTotalForPnL / buyQty : 0;
+
+      let pnl = 0;
+      if (op.type === 'long') {
+        pnl = (Number(currentPrice) - avgBuyPrice) * currentQty;
+      } else {
+        pnl = (avgBuyPrice - Number(currentPrice)) * currentQty;
+      }
+
+      if (op.product === 'etf') {
+        openPnLEtf += pnl;
+      } else {
+        openPnLTrading += pnl;
+      }
     }
 
     const availableCash = totalFromTransactions - totalInvested;
+    const totalOpenPnL = openPnLTrading + openPnLEtf;
+    const totalOpenValue = totalInvested + totalOpenPnL;
 
     return {
       totalFromTransactions,
       totalInvested,
       availableCash,
+      investedTrading,
+      investedEtf,
+      openPnLTrading,
+      openPnLEtf,
+      totalOpenPnL,
+      totalOpenValue,
     };
   }
 
@@ -93,8 +178,10 @@ export class AnalyticsService {
     userId: string,
     period: string,
     accountId?: string,
+    product?: 'trading' | 'etf',
   ): Promise<PerformanceDto> {
     const dateFrom = this.getDateFromPeriod(period);
+    const productFilter = this.getProductFilter(product);
 
     // Operaciones cerradas (P&L realizado)
     const closedOperations = await this.prisma.operations.findMany({
@@ -102,6 +189,7 @@ export class AnalyticsService {
         userId,
         status: 'closed',
         ...(accountId && { accountId }),
+        ...(productFilter || {}),
         ...(dateFrom && { updatedAt: { gte: dateFrom } }),
       },
     });
@@ -126,6 +214,7 @@ export class AnalyticsService {
         userId,
         status: 'open',
         ...(accountId && { accountId }),
+        ...(productFilter || {}),
       },
       include: {
         entries: true,
@@ -195,13 +284,16 @@ export class AnalyticsService {
     userId: string,
     period: string,
     accountId?: string,
+    product?: 'trading' | 'etf',
   ): Promise<SymbolPerformanceDto[]> {
     const dateFrom = this.getDateFromPeriod(period);
+    const productFilter = this.getProductFilter(product);
 
     const operations = await this.prisma.operations.findMany({
       where: {
         userId,
         ...(accountId && { accountId }),
+        ...(productFilter || {}),
       },
       include: {
         symbol: {
@@ -248,6 +340,11 @@ export class AnalyticsService {
 
       data.operationsCount++;
 
+      const buyTotalAll = op.entries
+        .filter((e) => e.entryType === 'buy')
+        .reduce((sum, e) => sum + Number(e.quantity) * Number(e.price), 0);
+      data.totalInvested += buyTotalAll;
+
       if (op.status === 'closed') {
         data.realizedPnL += op.balance || 0;
       } else {
@@ -273,7 +370,6 @@ export class AnalyticsService {
               0,
             );
             const avgBuyPrice = buyQty > 0 ? buyTotal / buyQty : 0;
-            data.totalInvested += avgBuyPrice * currentQty;
 
             if (op.type === 'long') {
               data.unrealizedPnL +=
@@ -368,17 +464,20 @@ export class AnalyticsService {
     userId: string,
     period: string,
     accountId?: string,
+    product?: 'trading' | 'etf',
   ): Promise<PortfolioPointDto[]> {
     const dateFrom = this.getDateFromPeriod(period);
     const startDate =
       dateFrom ||
       new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const productFilter = this.getProductFilter(product);
 
     // Obtener todas las operaciones con sus entradas y precios históricos
     const operations = await this.prisma.operations.findMany({
       where: {
         userId,
         ...(accountId && { accountId }),
+        ...(productFilter || {}),
       },
       include: {
         entries: {
@@ -482,20 +581,35 @@ export class AnalyticsService {
   async getMonthlyPerformance(
     userId: string,
     accountId?: string,
+    product?: 'trading' | 'etf',
   ): Promise<MonthlyPerformanceDto[]> {
+    const productFilter = this.getProductFilter(product);
     const operations = await this.prisma.operations.findMany({
       where: {
         userId,
         status: 'closed',
         ...(accountId && { accountId }),
+        ...(productFilter || {}),
       },
-      orderBy: { updatedAt: 'asc' },
+      include: {
+        entries: {
+          orderBy: { date: 'desc' },
+          take: 1,
+        },
+      },
     });
+
+    const closedOpsWithDate = operations
+      .map((op) => ({
+        ...op,
+        closeDate: this.getOperationCloseDate(op.entries, op.updatedAt),
+      }))
+      .filter((op) => op.closeDate);
 
     const monthsMap = new Map<string, MonthlyPerformanceDto>();
 
-    for (const op of operations) {
-      const date = new Date(op.updatedAt);
+    for (const op of closedOpsWithDate) {
+      const date = op.closeDate as Date;
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -518,10 +632,10 @@ export class AnalyticsService {
 
     const result = Array.from(monthsMap.values());
     for (const month of result) {
-      const monthOps = operations.filter(op => {
-        const date = new Date(op.updatedAt);
-        return date.getFullYear() === month.year &&
-               date.getMonth() === ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].indexOf(month.month);
+      const monthIndex = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].indexOf(month.month);
+      const monthOps = closedOpsWithDate.filter((op) => {
+        const date = op.closeDate as Date;
+        return date.getFullYear() === month.year && date.getMonth() === monthIndex;
       });
       const wins = monthOps.filter(op => (op.balance || 0) > 0).length;
       month.winRate = monthOps.length > 0 ? (wins / monthOps.length) * 100 : 0;
@@ -537,9 +651,11 @@ export class AnalyticsService {
     userId: string,
     period: string,
     accountId?: string,
+    product?: 'trading' | 'etf',
   ): Promise<EquityPointDto[]> {
     const dateFrom = this.getDateFromPeriod(period);
     const startDate = dateFrom || new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const productFilter = this.getProductFilter(product);
 
     const transactions = await this.prisma.transactions.findMany({
       where: {
@@ -555,10 +671,22 @@ export class AnalyticsService {
         userId,
         status: 'closed',
         ...(accountId && { accountId }),
-        updatedAt: { gte: startDate },
+        ...(productFilter || {}),
       },
-      orderBy: { updatedAt: 'asc' },
+      include: {
+        entries: {
+          orderBy: { date: 'desc' },
+          take: 1,
+        },
+      },
     });
+
+    const closedOpsWithDate = closedOps
+      .map((op) => ({
+        ...op,
+        closeDate: this.getOperationCloseDate(op.entries, op.updatedAt),
+      }))
+      .filter((op) => op.closeDate && (op.closeDate as Date) >= startDate);
 
     const interval = period === '7d' ? 1 : period === '30d' ? 1 : period === '90d' ? 7 : 30;
     const points: EquityPointDto[] = [];
@@ -580,8 +708,8 @@ export class AnalyticsService {
         .filter(t => Number(t.amount) < 0 && new Date(t.date) <= currentDate)
         .reduce((sum, t) => sum + Number(t.amount), 0));
 
-      const pnlUntilNow = closedOps
-        .filter(op => new Date(op.updatedAt) <= currentDate)
+      const pnlUntilNow = closedOpsWithDate
+        .filter(op => (op.closeDate as Date) <= currentDate)
         .reduce((sum, op) => sum + (op.balance || 0), 0);
 
       const equity = transactionsUntilNow + pnlUntilNow;
@@ -607,19 +735,37 @@ export class AnalyticsService {
     userId: string,
     period: string,
     accountId?: string,
+    product?: 'trading' | 'etf',
   ): Promise<RiskMetricsDto> {
     const dateFrom = this.getDateFromPeriod(period);
+    const productFilter = this.getProductFilter(product);
 
     const closedOps = await this.prisma.operations.findMany({
       where: {
         userId,
         status: 'closed',
         ...(accountId && { accountId }),
-        ...(dateFrom && { updatedAt: { gte: dateFrom } }),
+        ...(productFilter || {}),
+      },
+      include: {
+        entries: {
+          orderBy: { date: 'desc' },
+          take: 1,
+        },
       },
     });
 
-    if (closedOps.length === 0) {
+    const filteredClosedOps = dateFrom
+      ? closedOps.filter((op) => {
+          const closeDate = this.getOperationCloseDate(op.entries, op.updatedAt);
+          return closeDate ? closeDate >= dateFrom : false;
+        })
+      : closedOps.map((op) => ({
+          ...op,
+          entries: op.entries,
+        }));
+
+    if (filteredClosedOps.length === 0) {
       return {
         sharpeRatio: 0,
         maxDrawdown: 0,
@@ -632,8 +778,8 @@ export class AnalyticsService {
       };
     }
 
-    const wins = closedOps.filter(op => (op.balance || 0) > 0);
-    const losses = closedOps.filter(op => (op.balance || 0) < 0);
+    const wins = filteredClosedOps.filter(op => (op.balance || 0) > 0);
+    const losses = filteredClosedOps.filter(op => (op.balance || 0) < 0);
 
     const totalWins = wins.reduce((sum, op) => sum + (op.balance || 0), 0);
     const totalLosses = Math.abs(losses.reduce((sum, op) => sum + (op.balance || 0), 0));
@@ -646,7 +792,7 @@ export class AnalyticsService {
 
     const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? 999 : 0;
 
-    const returns = closedOps.map(op => op.balance || 0);
+    const returns = filteredClosedOps.map(op => op.balance || 0);
     const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
     const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
     const stdDev = Math.sqrt(variance);
@@ -657,7 +803,14 @@ export class AnalyticsService {
     let maxDrawdown = 0;
     let maxDrawdownPercentage = 0;
 
-    for (const op of closedOps.sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime())) {
+    const sortedOps = filteredClosedOps
+      .map((op) => ({
+        ...op,
+        closeDate: this.getOperationCloseDate(op.entries, op.updatedAt),
+      }))
+      .sort((a, b) => (a.closeDate as Date).getTime() - (b.closeDate as Date).getTime());
+
+    for (const op of sortedOps) {
       equity += op.balance || 0;
       if (equity > peak) peak = equity;
       const drawdown = peak - equity;
@@ -686,6 +839,7 @@ export class AnalyticsService {
     userId: string,
     period: string = '30d',
     accountId?: string,
+    product?: 'trading' | 'etf',
   ): Promise<DashboardResponseDto> {
     const [
       accountBalance,
@@ -698,13 +852,13 @@ export class AnalyticsService {
       riskMetrics,
     ] = await Promise.all([
       this.getAccountBalance(userId, accountId),
-      this.getPerformance(userId, period, accountId),
-      this.getSymbolsRanking(userId, period, accountId),
+      this.getPerformance(userId, period, accountId, product),
+      this.getSymbolsRanking(userId, period, accountId, product),
       this.getProductDistribution(userId, accountId),
-      this.getPortfolioEvolution(userId, period, accountId),
-      this.getMonthlyPerformance(userId, accountId),
-      this.getEquityCurve(userId, period, accountId),
-      this.getRiskMetrics(userId, period, accountId),
+      this.getPortfolioEvolution(userId, period, accountId, product),
+      this.getMonthlyPerformance(userId, accountId, product),
+      this.getEquityCurve(userId, period, accountId, product),
+      this.getRiskMetrics(userId, period, accountId, product),
     ]);
 
     return {

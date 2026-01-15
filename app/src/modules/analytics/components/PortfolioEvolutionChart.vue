@@ -2,22 +2,50 @@
   <q-card flat bordered>
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
-        <div class="text-h6">Evolución del Portfolio</div>
-        <q-btn
-          icon="info"
-          flat
-          dense
-          round
-          size="sm"
-          color="grey-6"
-          @click="showInfo = true"
-        />
+        <div class="row items-center q-gutter-sm">
+          <div class="text-h6">Evolución del Portfolio</div>
+          <q-chip
+            v-if="scopeLabel"
+            dense
+            :color="scopeChipColor"
+            :text-color="scopeChipTextColor"
+          >
+            {{ scopeLabel }}
+          </q-chip>
+          <q-chip dense color="deep-orange-1" text-color="deep-orange-9">
+            Rango {{ rangeLabel }}
+          </q-chip>
+        </div>
+        <div class="row items-center q-gutter-sm">
+          <q-btn-toggle
+            v-model="range"
+            :options="rangeOptions"
+            dense
+            rounded
+            no-caps
+            unelevated
+            color="grey-2"
+            text-color="grey-8"
+            toggle-color="primary"
+            toggle-text-color="white"
+            size="sm"
+          />
+          <q-btn
+            icon="info"
+            flat
+            dense
+            round
+            size="sm"
+            color="grey-6"
+            @click="showInfo = true"
+          />
+        </div>
       </div>
       <div v-if="loading" class="row justify-center q-pa-lg">
         <q-spinner color="primary" size="50px" />
       </div>
-      <div v-else-if="!data || data.length === 0" class="row justify-center q-pa-lg">
-        <div class="text-grey-6">No hay datos disponibles</div>
+      <div v-else-if="!hasData" class="row justify-center q-pa-lg">
+        <div class="text-grey-6">No hay datos disponibles en este rango</div>
       </div>
       <apexchart
         v-else
@@ -37,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import InfoModal from './InfoModal.vue';
 import type { PortfolioPointDto } from '../types';
 
@@ -49,6 +77,7 @@ import type { PortfolioPointDto } from '../types';
 interface Props {
   data?: PortfolioPointDto[];
   loading?: boolean;
+  scopeLabel?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -56,7 +85,20 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
 
+const emit = defineEmits<{
+  (e: 'range-change', value: '7d' | '1m' | '3m' | '6m' | '1y' | 'all'): void;
+}>();
+
 const showInfo = ref(false);
+const range = ref<'7d' | '1m' | '3m' | '6m' | '1y' | 'all'>('3m');
+const rangeOptions = [
+  { label: '7D', value: '7d' },
+  { label: '1M', value: '1m' },
+  { label: '3M', value: '3m' },
+  { label: '6M', value: '6m' },
+  { label: '1A', value: '1y' },
+  { label: 'Todo', value: 'all' },
+];
 
 const infoContent = `
 <p><strong>¿Qué muestra este gráfico?</strong></p>
@@ -71,27 +113,96 @@ const infoContent = `
   <li>Si está <strong>por debajo</strong> → Estás en pérdidas</li>
   <li>La separación entre líneas muestra la magnitud del P&L</li>
 </ul>
+<p><strong>Consejo:</strong> Usa el selector de rango y las herramientas de zoom/pan para explorar periodos concretos.</p>
+<p><strong>Nota:</strong> Este grafico usa su propio rango, independiente del periodo global.</p>
 `;
+
+const rangeLabel = computed(() => {
+  const labels: Record<string, string> = {
+    '7d': '7D',
+    '1m': '1M',
+    '3m': '3M',
+    '6m': '6M',
+    '1y': '1A',
+    all: 'Todo',
+  };
+  return labels[range.value] || range.value;
+});
+
+const scopeChipColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'light-green-1' : 'light-blue-1'
+));
+const scopeChipTextColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'green-10' : 'blue-10'
+));
+
+watch(range, (value) => {
+  emit('range-change', value);
+});
 
 /**
  * Series de datos para ApexCharts
  */
-const series = computed(() => {
+const maxDateMs = computed(() => {
+  const last = props.data?.at(-1)?.date;
+  return last ? new Date(last).getTime() : null;
+});
+
+const rangeStartMs = computed(() => {
+  if (!maxDateMs.value || range.value === 'all') return null;
+  const date = new Date(maxDateMs.value);
+  switch (range.value) {
+    case '7d':
+      date.setDate(date.getDate() - 7);
+      break;
+    case '1m':
+      date.setMonth(date.getMonth() - 1);
+      break;
+    case '3m':
+      date.setMonth(date.getMonth() - 3);
+      break;
+    case '6m':
+      date.setMonth(date.getMonth() - 6);
+      break;
+    case '1y':
+      date.setFullYear(date.getFullYear() - 1);
+      break;
+    default:
+      return null;
+  }
+  return date.getTime();
+});
+
+const filteredData = computed(() => {
   if (!props.data || props.data.length === 0) {
+    return [];
+  }
+  if (!rangeStartMs.value) {
+    return props.data;
+  }
+  return props.data.filter(
+    (point) => new Date(point.date).getTime() >= rangeStartMs.value!,
+  );
+});
+
+const hasData = computed(() => filteredData.value.length > 0);
+
+const series = computed(() => {
+  if (!filteredData.value || filteredData.value.length === 0) {
     return [];
   }
 
   return [
     {
       name: 'Invertido',
-      data: props.data.map((p) => ({
+      data: filteredData.value.map((p) => ({
         x: new Date(p.date).getTime(),
         y: p.totalInvested,
       })),
     },
     {
       name: 'Valor Portfolio',
-      data: props.data.map((p) => ({
+      data: filteredData.value.map((p) => ({
         x: new Date(p.date).getTime(),
         y: p.portfolioValue,
       })),
@@ -106,10 +217,22 @@ const chartOptions = computed(() => ({
   chart: {
     type: 'area',
     toolbar: {
-      show: false,
+      show: true,
+      tools: {
+        download: false,
+        selection: true,
+        zoom: true,
+        zoomin: true,
+        zoomout: true,
+        pan: true,
+        reset: true,
+      },
     },
     zoom: {
-      enabled: false,
+      enabled: true,
+    },
+    pan: {
+      enabled: true,
     },
   },
   colors: ['#1976D2', '#21BA45'],
@@ -163,11 +286,8 @@ const chartOptions = computed(() => ({
     },
   },
   legend: {
-    position: 'top',
-    horizontalAlign: 'right',
-    labels: {
-      colors: '#FFFFFF',
-    },
+    position: 'bottom',
+    horizontalAlign: 'left',
   },
   grid: {
     borderColor: '#e0e0e0',

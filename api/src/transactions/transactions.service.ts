@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { transactions } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { NewTransactionDto } from './dtos/NewTransactionDto';
 
 @Injectable()
@@ -18,7 +18,13 @@ export class TransactionsService {
     return this.prisma.transactions.create({ data });
   }
 
-  removeTransaction(id: string) {
-    return this.prisma.transactions.delete({ where: { id } });
+  async removeTransaction(id: string, userId: string, accountId: string) {
+    const result = await this.prisma.transactions.deleteMany({
+      where: { id, userId, accountId },
+    });
+    if (result.count === 0) {
+      throw new Error('Transaction not found');
+    }
+    return true;
   }
 }

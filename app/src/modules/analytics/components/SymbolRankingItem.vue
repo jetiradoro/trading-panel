@@ -21,14 +21,21 @@
     </div>
 
     <!-- Invertido -->
-    <div class="col-3 col-sm-2 text-right">
+    <div class="col-2 col-sm-2 text-right">
       <div class="text-weight-medium amount-text">{{ formatCurrency(symbol.totalInvested) }}</div>
     </div>
 
-    <!-- P&L -->
-    <div class="col-3 col-sm-2 text-right">
-      <div class="text-weight-medium amount-text" :class="getPnLColor(symbol.totalPnL)">
-        {{ formatCurrency(symbol.totalPnL) }}
+    <!-- P&L Realizado -->
+    <div class="col-2 col-sm-2 text-right">
+      <div class="text-weight-medium amount-text" :class="getPnLColor(symbol.realizedPnL)">
+        {{ formatCurrency(symbol.realizedPnL) }}
+      </div>
+    </div>
+
+    <!-- P&L Abierto -->
+    <div class="col-2 col-sm-2 text-right">
+      <div class="text-weight-medium amount-text" :class="getPnLColor(symbol.unrealizedPnL)">
+        {{ formatCurrency(symbol.unrealizedPnL) }}
       </div>
     </div>
 

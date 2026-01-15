@@ -541,6 +541,10 @@ Nota: `currentPrice` se obtiene del último registro en `price_history`. Si no e
 - **Inversión neta**: acumulado de entradas/salidas (`buy` suma, `sell` resta).
 - **Rango temporal**: filtro por periodos (7D, 1M, 3M, 6M, 1A, Todo).
 
+## Scope de datos
+- Todas las operaciones se filtran por **usuario y cuenta activa**.
+- Los símbolos vinculados a operaciones son **privados por cuenta activa**.
+
 ## Backend - Entradas y precios
 - Al crear una nueva entrada (`addEntry`) se registra también un precio en `price_history`
   con el mismo `price` y `date` de la entrada.

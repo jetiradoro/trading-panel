@@ -6,6 +6,12 @@ export class AccountBalanceDto {
   totalFromTransactions: number;
   totalInvested: number;
   availableCash: number;
+  investedTrading: number;
+  investedEtf: number;
+  openPnLTrading: number;
+  openPnLEtf: number;
+  totalOpenPnL: number;
+  totalOpenValue: number;
 }
 
 export class PerformanceDto {

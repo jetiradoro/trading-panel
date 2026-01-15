@@ -6,6 +6,12 @@ export interface AccountBalanceDto {
   totalFromTransactions: number;
   totalInvested: number;
   availableCash: number;
+  investedTrading: number;
+  investedEtf: number;
+  openPnLTrading: number;
+  openPnLEtf: number;
+  totalOpenPnL: number;
+  totalOpenValue: number;
 }
 
 export interface PerformanceDto {
@@ -90,3 +96,4 @@ export interface DashboardResponseDto {
 }
 
 export type PeriodType = '7d' | '30d' | '90d' | '1y' | 'all';
+export type ProductScope = 'trading' | 'etf';

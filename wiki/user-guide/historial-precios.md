@@ -17,6 +17,8 @@
 
 El **historial de precios** es un registro cronológico de los precios de mercado de cada símbolo (Bitcoin, Apple, etc.) en diferentes momentos del tiempo.
 
+> **Nota**: El historial es **por cuenta activa**. Si trabajas con varias cuentas, cada una tiene su propio historial.
+
 Por ejemplo, si tienes operaciones con Bitcoin (BTC), el historial de precios almacena:
 - Precio de BTC el 1 de enero: $42,000
 - Precio de BTC el 15 de enero: $45,000

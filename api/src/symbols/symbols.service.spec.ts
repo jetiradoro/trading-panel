@@ -24,6 +24,8 @@ describe('SymbolsService', () => {
     name: 'Bitcoin',
     logo: 'https://logo.url',
     product: 'crypto',
+    userId: 'user-1',
+    accountId: 'acc-1',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -62,19 +64,30 @@ describe('SymbolsService', () => {
       mockPrismaService.symbols.findUnique.mockResolvedValue(null);
       mockPrismaService.symbols.create.mockResolvedValue(mockSymbol);
 
-      const result = await service.create(createDto);
+      const result = await service.create(createDto, 'user-1', 'acc-1');
 
       expect(prisma.symbols.findUnique).toHaveBeenCalledWith({
-        where: { code: 'BTC' },
+        where: {
+          accountId_code: {
+            accountId: 'acc-1',
+            code: 'BTC',
+          },
+        },
       });
-      expect(prisma.symbols.create).toHaveBeenCalledWith({ data: createDto });
+      expect(prisma.symbols.create).toHaveBeenCalledWith({
+        data: {
+          ...createDto,
+          userId: 'user-1',
+          accountId: 'acc-1',
+        },
+      });
       expect(result).toEqual(mockSymbol);
     });
 
     it('should throw ConflictException if code already exists', async () => {
       mockPrismaService.symbols.findUnique.mockResolvedValue(mockSymbol);
 
-      await expect(service.create(createDto)).rejects.toThrow(
+      await expect(service.create(createDto, 'user-1', 'acc-1')).rejects.toThrow(
         ConflictException,
       );
       expect(prisma.symbols.create).not.toHaveBeenCalled();
@@ -86,9 +99,10 @@ describe('SymbolsService', () => {
       const symbols = [mockSymbol];
       mockPrismaService.symbols.findMany.mockResolvedValue(symbols);
 
-      const result = await service.findAll();
+      const result = await service.findAll('user-1', 'acc-1');
 
       expect(prisma.symbols.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', accountId: 'acc-1' },
         orderBy: { code: 'asc' },
       });
       expect(result).toEqual(symbols);
@@ -100,10 +114,12 @@ describe('SymbolsService', () => {
       const symbols = [mockSymbol];
       mockPrismaService.symbols.findMany.mockResolvedValue(symbols);
 
-      const result = await service.search('BTC');
+      const result = await service.search('BTC', 'user-1', 'acc-1');
 
       expect(prisma.symbols.findMany).toHaveBeenCalledWith({
         where: {
+          userId: 'user-1',
+          accountId: 'acc-1',
           OR: [{ code: { contains: 'BTC' } }, { name: { contains: 'BTC' } }],
         },
         orderBy: { code: 'asc' },
@@ -114,20 +130,20 @@ describe('SymbolsService', () => {
 
   describe('findOne', () => {
     it('should return a symbol by id', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(mockSymbol);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(mockSymbol);
 
-      const result = await service.findOne('symbol-1');
+      const result = await service.findOne('symbol-1', 'user-1', 'acc-1');
 
-      expect(prisma.symbols.findUnique).toHaveBeenCalledWith({
-        where: { id: 'symbol-1' },
+      expect(prisma.symbols.findFirst).toHaveBeenCalledWith({
+        where: { id: 'symbol-1', userId: 'user-1', accountId: 'acc-1' },
       });
       expect(result).toEqual(mockSymbol);
     });
 
     it('should throw NotFoundException if symbol not found', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(null);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(null);
 
-      await expect(service.findOne('invalid-id')).rejects.toThrow(
+      await expect(service.findOne('invalid-id', 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -135,20 +151,20 @@ describe('SymbolsService', () => {
 
   describe('findByCode', () => {
     it('should return a symbol by code', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(mockSymbol);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(mockSymbol);
 
-      const result = await service.findByCode('BTC');
+      const result = await service.findByCode('BTC', 'user-1', 'acc-1');
 
-      expect(prisma.symbols.findUnique).toHaveBeenCalledWith({
-        where: { code: 'BTC' },
+      expect(prisma.symbols.findFirst).toHaveBeenCalledWith({
+        where: { code: 'BTC', userId: 'user-1', accountId: 'acc-1' },
       });
       expect(result).toEqual(mockSymbol);
     });
 
     it('should return null if symbol not found', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(null);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(null);
 
-      const result = await service.findByCode('INVALID');
+      const result = await service.findByCode('INVALID', 'user-1', 'acc-1');
 
       expect(result).toBeNull();
     });
@@ -158,16 +174,16 @@ describe('SymbolsService', () => {
     const updateDto = { name: 'Bitcoin Updated' };
 
     it('should update a symbol successfully', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(mockSymbol);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(mockSymbol);
       mockPrismaService.symbols.update.mockResolvedValue({
         ...mockSymbol,
         ...updateDto,
       });
 
-      const result = await service.update('symbol-1', updateDto);
+      const result = await service.update('symbol-1', updateDto, 'user-1', 'acc-1');
 
-      expect(prisma.symbols.findUnique).toHaveBeenCalledWith({
-        where: { id: 'symbol-1' },
+      expect(prisma.symbols.findFirst).toHaveBeenCalledWith({
+        where: { id: 'symbol-1', userId: 'user-1', accountId: 'acc-1' },
       });
       expect(prisma.symbols.update).toHaveBeenCalledWith({
         where: { id: 'symbol-1' },
@@ -177,22 +193,23 @@ describe('SymbolsService', () => {
     });
 
     it('should throw NotFoundException if symbol not found', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(null);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(null);
 
-      await expect(service.update('invalid-id', updateDto)).rejects.toThrow(
+      await expect(service.update('invalid-id', updateDto, 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
       expect(prisma.symbols.update).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException if new code already exists', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(mockSymbol);
-      mockPrismaService.symbols.findFirst.mockResolvedValue({
-        ...mockSymbol,
-        id: 'other-symbol',
-      });
+      mockPrismaService.symbols.findFirst
+        .mockResolvedValueOnce(mockSymbol)
+        .mockResolvedValueOnce({
+          ...mockSymbol,
+          id: 'other-symbol',
+        });
 
-      await expect(service.update('symbol-1', { code: 'ETH' })).rejects.toThrow(
+      await expect(service.update('symbol-1', { code: 'ETH' }, 'user-1', 'acc-1')).rejects.toThrow(
         ConflictException,
       );
     });
@@ -200,13 +217,13 @@ describe('SymbolsService', () => {
 
   describe('remove', () => {
     it('should delete a symbol successfully', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(mockSymbol);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(mockSymbol);
       mockPrismaService.symbols.delete.mockResolvedValue(mockSymbol);
 
-      const result = await service.remove('symbol-1');
+      const result = await service.remove('symbol-1', 'user-1', 'acc-1');
 
-      expect(prisma.symbols.findUnique).toHaveBeenCalledWith({
-        where: { id: 'symbol-1' },
+      expect(prisma.symbols.findFirst).toHaveBeenCalledWith({
+        where: { id: 'symbol-1', userId: 'user-1', accountId: 'acc-1' },
       });
       expect(prisma.symbols.delete).toHaveBeenCalledWith({
         where: { id: 'symbol-1' },
@@ -215,9 +232,9 @@ describe('SymbolsService', () => {
     });
 
     it('should throw NotFoundException if symbol not found', async () => {
-      mockPrismaService.symbols.findUnique.mockResolvedValue(null);
+      mockPrismaService.symbols.findFirst.mockResolvedValue(null);
 
-      await expect(service.remove('invalid-id')).rejects.toThrow(
+      await expect(service.remove('invalid-id', 'user-1', 'acc-1')).rejects.toThrow(
         NotFoundException,
       );
       expect(prisma.symbols.delete).not.toHaveBeenCalled();

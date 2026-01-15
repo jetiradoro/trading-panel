@@ -96,16 +96,34 @@ En la parte superior derecha, puedes filtrar por:
 - Rendimiento (P&L)
 - Ranking de símbolos
 - Evolución del portfolio
+ - Curva de equity y métricas de riesgo
 
 **¿Qué NO cambia?**
 - Balance de cuenta (siempre muestra el actual)
 - Distribución por producto (siempre muestra operaciones abiertas)
+ - Rango del gráfico de evolución (usa su propio selector)
 
 **Ejemplo práctico:**
 Si seleccionas "7d", verás:
 - P&L de operaciones cerradas en los últimos 7 días
 - Símbolos que has operado en los últimos 7 días
 - Evolución de tu portfolio día a día
+
+---
+
+### Cambiar entre Trading y Planes ETF
+
+En la parte superior encontrarás dos pestañas:
+- **Trading**: métricas solo de criptos/acciones
+- **Planes ETF**: métricas solo de ETFs
+
+Estas pestañas afectan a:
+- Rendimiento (P&L)
+- Evolución del portfolio
+- Rendimiento mensual
+- Curva de equity y métricas de riesgo
+
+**No afectan** al balance total ni a la distribución por producto.
 
 ---
 
@@ -119,7 +137,7 @@ Si seleccionas "7d", verás:
 
 **Dinero Invertido**
 - Color: Neutral
-- Muestra: Suma de todas las inversiones activas
+- Muestra: Suma de todas las inversiones activas (Trading + Planes ETF)
 
 **Disponible**
 - Color: Neutral
@@ -135,7 +153,18 @@ Si seleccionas "7d", verás:
 
 ---
 
-### 2. Resumen de Rendimiento
+### 2. Resumen de Inversion Abierta
+
+Este bloque separa claramente:
+- **Invertido Trading** y **Invertido Planes ETF**
+- **P&L abierto Trading** y **P&L abierto Planes ETF**
+- **Valor actual abierto** (invertido total + P&L abierto total)
+
+Sirve para ver de un vistazo el estado de tus posiciones abiertas sin mezclar productos.
+
+---
+
+### 3. Resumen de Rendimiento
 
 Muestra tu desempeño global en el periodo seleccionado.
 
@@ -238,26 +267,33 @@ Si invertiste 5.000€ y ahora vale 5.500€:
 
 ---
 
-### 5. Ranking de Símbolos (Top 10)
+### 5. Ranking de Símbolos
 
 Tabla que muestra tus mejores y peores inversiones.
+
+**Filtros aplicados:**
+- Respeta el periodo seleccionado
+- Respeta la pestaña activa (Trading o Planes ETF)
 
 **Columnas:**
 - **#**: Posición en el ranking
 - **Símbolo**: Logo y nombre (ej: BTC - Bitcoin)
 - **Invertido**: Cuánto dinero has puesto
-- **P&L**: Ganancia o pérdida
+- **P&L Real.**: Ganancia/pérdida realizada (operaciones cerradas)
+- **P&L Abierto**: Ganancia/pérdida no realizada
 - **%**: Rentabilidad porcentual
 - **Tendencia**: Mini gráfico de precio
+
+**Paginación:** Puedes elegir cuántos resultados ver por página.
 
 **Ordenamiento:** De mayor a menor P&L total.
 
 **Ejemplo:**
 ```
-#  Símbolo  Invertido  P&L        %      Tendencia
-1  BTC      5,000 €    +450.00€   +9.0%  ╱╲╱─╲╱
-2  ETH      2,100 €    +180.00€   +8.5%  ─╱─╱╲
-3  AAPL     1,500 €    +75.00€    +5.0%  ╱╱╱──
+#  Símbolo  Invertido  P&L Real.  P&L Abierto  %      Tendencia
+1  BTC      5,000 €    +450.00€   +60.00€      +10%   ╱╲╱─╲╱
+2  ETH      2,100 €    +180.00€   -20.00€      +7%    ─╱─╱╲
+3  AAPL     1,500 €    +75.00€    +10.00€      +6%    ╱╱╱──
 ...
 10 SOL        800 €    -120.00€   -15%   ╲╲╲──
 ```

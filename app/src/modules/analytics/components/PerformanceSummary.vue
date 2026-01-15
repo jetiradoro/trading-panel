@@ -2,7 +2,20 @@
   <q-card flat bordered class="performance-summary">
     <q-card-section>
       <div class="row items-center justify-between q-mb-md">
-        <div class="text-h6">Rendimiento Global</div>
+        <div class="row items-center q-gutter-sm">
+          <div class="text-h6">Rendimiento Global</div>
+          <q-chip
+            v-if="scopeLabel"
+            dense
+            :color="scopeChipColor"
+            :text-color="scopeChipTextColor"
+          >
+            {{ scopeLabel }}
+          </q-chip>
+          <q-chip v-if="periodLabel" dense color="amber-1" text-color="amber-9">
+            Periodo {{ periodLabel }}
+          </q-chip>
+        </div>
         <q-btn
           icon="info"
           flat
@@ -90,6 +103,8 @@ import type { PerformanceDto } from '../types';
  */
 interface Props {
   performance: PerformanceDto;
+  scopeLabel?: string;
+  periodLabel?: string;
 }
 
 const props = defineProps<Props>();
@@ -106,6 +121,7 @@ const infoContent = `
 </ul>
 <p><strong>Interpretación:</strong></p>
 <p>Verde = ganancias, Rojo = pérdidas. Un win rate > 50% indica más aciertos que fallos.</p>
+<p><strong>Filtro aplicado:</strong> Este widget respeta el periodo seleccionado y la pestaña activa (Trading o Planes ETF).</p>
 `;
 
 const formatCurrency = (value: number): string => {
@@ -129,6 +145,12 @@ const getPnLColor = (value: number): string => {
 };
 
 const totalPnLColor = computed(() => getPnLColor(props.performance.totalPnL));
+const scopeChipColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'light-green-1' : 'light-blue-1'
+));
+const scopeChipTextColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'green-10' : 'blue-10'
+));
 </script>
 
 <style scoped lang="scss">

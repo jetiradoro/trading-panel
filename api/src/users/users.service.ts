@@ -33,8 +33,9 @@ export class UsersService {
     return user;
   }
 
-  findAll(): Promise<UserDto[]> {
+  findAll(userId: string): Promise<UserDto[]> {
     const users = this.prisma.users.findMany({
+      where: { id: userId },
       select: {
         id: true,
         email: true,

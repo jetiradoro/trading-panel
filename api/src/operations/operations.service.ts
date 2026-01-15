@@ -13,6 +13,17 @@ import { operations } from '@prisma/client';
 export class OperationsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async findOperationForAccount(
+    operationId: string,
+    userId: string,
+    accountId: string,
+    client: PrismaService | any = this.prisma,
+  ) {
+    return client.operations.findFirst({
+      where: { id: operationId, userId, accountId },
+    });
+  }
+
   /**
    * Calcula si una operación debe cerrarse automáticamente
    * Cierre cuando: sum(buy.qty) == sum(sell.qty)
@@ -88,10 +99,10 @@ export class OperationsService {
   async updateStatus(
     operationId: string,
     status: 'open' | 'closed',
+    userId: string,
+    accountId: string,
   ): Promise<any> {
-    const operation = await this.prisma.operations.findUnique({
-      where: { id: operationId },
-    });
+    const operation = await this.findOperationForAccount(operationId, userId, accountId);
 
     if (!operation) {
       throw new NotFoundException(`Operation with id ${operationId} not found`);
@@ -102,7 +113,7 @@ export class OperationsService {
         where: { id: operationId },
         data: { status: 'open', balance: null },
       });
-      return this.findOne(operationId);
+      return this.findOne(operationId, userId, accountId);
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -117,7 +128,7 @@ export class OperationsService {
       });
     });
 
-    return this.findOne(operationId);
+    return this.findOne(operationId, userId, accountId);
   }
 
   /**
@@ -129,6 +140,20 @@ export class OperationsService {
     // Asegurar que userId existe
     if (!userId) {
       throw new Error('userId is required');
+    }
+
+    const account = await this.prisma.accounts.findFirst({
+      where: { id: accountId, userId },
+    });
+    if (!account) {
+      throw new NotFoundException('Active account not found');
+    }
+
+    const symbol = await this.prisma.symbols.findFirst({
+      where: { id: symbolId, userId, accountId },
+    });
+    if (!symbol) {
+      throw new NotFoundException('Symbol not found for active account');
     }
 
     // Transacción para crear operación y primera entrada
@@ -156,6 +181,8 @@ export class OperationsService {
         await tx.price_history.create({
           data: {
             symbolId: symbolId,
+            userId,
+            accountId,
             price: firstEntry.price,
             date: new Date(firstEntry.date),
           },
@@ -171,15 +198,17 @@ export class OperationsService {
    */
   async findAll(filters: {
     userId: string;
+    accountId: string;
     status?: string;
     product?: string;
     symbolId?: string;
   }): Promise<any[]> {
-    const { userId, status, product, symbolId } = filters;
+    const { userId, accountId, status, product, symbolId } = filters;
 
     const operations = await this.prisma.operations.findMany({
       where: {
         userId,
+        accountId,
         ...(status && { status }),
         ...(product && { product }),
         ...(symbolId && { symbolId }),
@@ -188,6 +217,7 @@ export class OperationsService {
         symbol: {
           include: {
             priceHistory: {
+              where: { accountId },
               orderBy: { date: 'desc' },
             },
           },
@@ -282,17 +312,18 @@ export class OperationsService {
   /**
    * Obtener detalle de operación con entries y cálculos
    */
-  async findOne(id: string): Promise<any> {
+  async findOne(id: string, userId: string, accountId: string): Promise<any> {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-    const operation = await this.prisma.operations.findUnique({
-      where: { id },
+    const operation = await this.prisma.operations.findFirst({
+      where: { id, userId, accountId },
       include: {
         symbol: {
           include: {
             priceHistory: {
               where: {
+                accountId,
                 date: { gte: oneYearAgo },
               },
               orderBy: { date: 'desc' },
@@ -336,14 +367,21 @@ export class OperationsService {
    * Agregar entrada a una operación con cierre automático
    * Si sum(buy.qty) == sum(sell.qty), cierra la operación y calcula balance
    */
-  async addEntry(operationId: string, data: CreateEntryDto): Promise<any> {
-    const operation = await this.prisma.operations.findUnique({
-      where: { id: operationId },
+  async addEntry(
+    operationId: string,
+    data: CreateEntryDto,
+    userId: string,
+    accountId: string,
+  ): Promise<any> {
+    const operation = await this.prisma.operations.findFirst({
+      where: { id: operationId, userId, accountId },
       select: {
         id: true,
         status: true,
         type: true,
         symbolId: true,
+        userId: true,
+        accountId: true,
       },
     });
 
@@ -371,6 +409,8 @@ export class OperationsService {
         await tx.price_history.create({
           data: {
             symbolId: operation.symbolId,
+            userId: operation.userId,
+            accountId: operation.accountId,
             price: data.price,
             date: entryDate,
           },
@@ -407,7 +447,13 @@ export class OperationsService {
     operationId: string,
     entryId: string,
     data: UpdateEntryDto,
+    userId: string,
+    accountId: string,
   ): Promise<any> {
+    const operation = await this.findOperationForAccount(operationId, userId, accountId);
+    if (!operation) {
+      throw new NotFoundException(`Operation with id ${operationId} not found`);
+    }
     const entry = await this.prisma.operation_entries.findUnique({
       where: { id: entryId },
     });
@@ -430,7 +476,12 @@ export class OperationsService {
   /**
    * Eliminar entrada de operación
    */
-  async removeEntry(operationId: string, entryId: string): Promise<any> {
+  async removeEntry(
+    operationId: string,
+    entryId: string,
+    userId: string,
+    accountId: string,
+  ): Promise<any> {
     return this.prisma.$transaction(async (tx) => {
       const entry = await tx.operation_entries.findUnique({
         where: { id: entryId },
@@ -440,9 +491,12 @@ export class OperationsService {
         throw new NotFoundException(`Entry with id ${entryId} not found`);
       }
 
-      const operation = await tx.operations.findUnique({
-        where: { id: operationId },
-      });
+      const operation = await this.findOperationForAccount(
+        operationId,
+        userId,
+        accountId,
+        tx,
+      );
 
       if (!operation) {
         throw new NotFoundException(
@@ -468,9 +522,9 @@ export class OperationsService {
   /**
    * Eliminar operación
    */
-  async remove(id: string): Promise<operations> {
-    const operation = await this.prisma.operations.findUnique({
-      where: { id },
+  async remove(id: string, userId: string, accountId: string): Promise<operations> {
+    const operation = await this.prisma.operations.findFirst({
+      where: { id, userId, accountId },
     });
 
     if (!operation) {

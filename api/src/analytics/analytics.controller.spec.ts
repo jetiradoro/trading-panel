@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { AccountsService } from '../accounts/accounts.service';
 
 /**
  * Tests unitarios para AnalyticsController
@@ -17,6 +18,12 @@ describe('AnalyticsController', () => {
     getSymbolsRanking: jest.fn(),
     getProductDistribution: jest.fn(),
     getPortfolioEvolution: jest.fn(),
+    getMonthlyPerformance: jest.fn(),
+    getEquityCurve: jest.fn(),
+    getRiskMetrics: jest.fn(),
+  };
+  const mockAccountsService = {
+    findCurrentAccount: jest.fn().mockResolvedValue({ id: 'account-1' }),
   };
 
   const mockUser = {
@@ -38,6 +45,10 @@ describe('AnalyticsController', () => {
           provide: AnalyticsService,
           useValue: mockAnalyticsService,
         },
+        {
+          provide: AccountsService,
+          useValue: mockAccountsService,
+        },
       ],
     })
       .overrideGuard(AuthGuard)
@@ -58,12 +69,18 @@ describe('AnalyticsController', () => {
 
   describe('getDashboard', () => {
     it('should call service with correct parameters', async () => {
-      const query = { period: '30d' as const, accountId: undefined };
+      const query = { period: '30d' as const, accountId: undefined, product: 'trading' as const };
       const mockResult = {
         accountBalance: {
           totalFromTransactions: 10000,
           totalInvested: 5000,
           availableCash: 5000,
+          investedTrading: 3000,
+          investedEtf: 2000,
+          openPnLTrading: 150,
+          openPnLEtf: 50,
+          totalOpenPnL: 200,
+          totalOpenValue: 5200,
         },
         performance: {
           realizedPnL: 100,
@@ -87,13 +104,14 @@ describe('AnalyticsController', () => {
       expect(service.getDashboard).toHaveBeenCalledWith(
         mockUser.id,
         '30d',
-        undefined,
+        'account-1',
+        'trading',
       );
       expect(result).toEqual(mockResult);
     });
 
     it('should pass accountId when provided', async () => {
-      const query = { period: '7d' as const, accountId: 'account-123' };
+      const query = { period: '7d' as const, accountId: 'account-123', product: 'etf' as const };
 
       mockAnalyticsService.getDashboard.mockResolvedValue({} as any);
 
@@ -102,7 +120,8 @@ describe('AnalyticsController', () => {
       expect(service.getDashboard).toHaveBeenCalledWith(
         mockUser.id,
         '7d',
-        'account-123',
+        'account-1',
+        'etf',
       );
     });
   });
@@ -114,6 +133,12 @@ describe('AnalyticsController', () => {
         totalFromTransactions: 10000,
         totalInvested: 6000,
         availableCash: 4000,
+        investedTrading: 3500,
+        investedEtf: 2500,
+        openPnLTrading: 200,
+        openPnLEtf: -50,
+        totalOpenPnL: 150,
+        totalOpenValue: 6150,
       };
 
       mockAnalyticsService.getAccountBalance.mockResolvedValue(mockBalance);
@@ -122,7 +147,7 @@ describe('AnalyticsController', () => {
 
       expect(service.getAccountBalance).toHaveBeenCalledWith(
         mockUser.id,
-        undefined,
+        'account-1',
       );
       expect(result).toEqual(mockBalance);
     });
@@ -136,14 +161,14 @@ describe('AnalyticsController', () => {
 
       expect(service.getAccountBalance).toHaveBeenCalledWith(
         mockUser.id,
-        'account-456',
+        'account-1',
       );
     });
   });
 
   describe('getPerformance', () => {
     it('should return performance metrics', async () => {
-      const query = { period: '90d' as const, accountId: undefined };
+      const query = { period: '90d' as const, accountId: undefined, product: 'trading' as const };
       const mockPerformance = {
         realizedPnL: 500,
         unrealizedPnL: 200,
@@ -161,13 +186,14 @@ describe('AnalyticsController', () => {
       expect(service.getPerformance).toHaveBeenCalledWith(
         mockUser.id,
         '90d',
-        undefined,
+        'account-1',
+        'trading',
       );
       expect(result).toEqual(mockPerformance);
     });
 
     it('should use default period 30d when not provided', async () => {
-      const query = { period: undefined, accountId: undefined };
+      const query = { period: undefined, accountId: undefined, product: 'etf' as const };
 
       mockAnalyticsService.getPerformance.mockResolvedValue({} as any);
 
@@ -176,14 +202,15 @@ describe('AnalyticsController', () => {
       expect(service.getPerformance).toHaveBeenCalledWith(
         mockUser.id,
         '30d',
-        undefined,
+        'account-1',
+        'etf',
       );
     });
   });
 
   describe('getSymbolsRanking', () => {
     it('should return symbols ranking', async () => {
-      const query = { period: '1y' as const, accountId: undefined };
+      const query = { period: '1y' as const, accountId: undefined, product: 'trading' as const };
       const mockRanking = [
         {
           symbolId: 'sym-1',
@@ -208,7 +235,8 @@ describe('AnalyticsController', () => {
       expect(service.getSymbolsRanking).toHaveBeenCalledWith(
         mockUser.id,
         '1y',
-        undefined,
+        'account-1',
+        'trading',
       );
       expect(result).toEqual(mockRanking);
     });
@@ -223,6 +251,7 @@ describe('AnalyticsController', () => {
       expect(service.getSymbolsRanking).toHaveBeenCalledWith(
         mockUser.id,
         '30d',
+        'account-1',
         undefined,
       );
     });
@@ -258,7 +287,7 @@ describe('AnalyticsController', () => {
 
       expect(service.getProductDistribution).toHaveBeenCalledWith(
         mockUser.id,
-        undefined,
+        'account-1',
       );
       expect(result).toEqual(mockDistribution);
     });
@@ -266,7 +295,7 @@ describe('AnalyticsController', () => {
 
   describe('getPortfolioEvolution', () => {
     it('should return portfolio evolution data', async () => {
-      const query = { period: 'all' as const, accountId: undefined };
+      const query = { period: 'all' as const, accountId: undefined, product: 'trading' as const };
       const mockEvolution = [
         {
           date: '2024-01-01',
@@ -291,13 +320,14 @@ describe('AnalyticsController', () => {
       expect(service.getPortfolioEvolution).toHaveBeenCalledWith(
         mockUser.id,
         'all',
-        undefined,
+        'account-1',
+        'trading',
       );
       expect(result).toEqual(mockEvolution);
     });
 
     it('should use default period when not provided', async () => {
-      const query = { period: undefined, accountId: undefined };
+      const query = { period: undefined, accountId: undefined, product: 'etf' as const };
 
       mockAnalyticsService.getPortfolioEvolution.mockResolvedValue([]);
 
@@ -306,7 +336,8 @@ describe('AnalyticsController', () => {
       expect(service.getPortfolioEvolution).toHaveBeenCalledWith(
         mockUser.id,
         '30d',
-        undefined,
+        'account-1',
+        'etf',
       );
     });
   });

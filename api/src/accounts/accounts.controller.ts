@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { AuthGuard } from '../auth/guards/auth.guard';
 import { AppClient } from '../common/decorators/app-client.decorator';
 import { users } from '@prisma/client';
 
@@ -39,17 +39,22 @@ export class AccountsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findBy({ id });
+  findOne(@AppClient() user: users, @Param('id') id: string) {
+    return this.service.findBy({ id, userId: user.id });
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: CreateAccountDto) {
-    return this.service.update(id, data);
+  update(
+    @AppClient() user: users,
+    @Param('id') id: string,
+    @Body() data: CreateAccountDto,
+  ) {
+    data.userId = user.id;
+    return this.service.update(id, data, user.id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@AppClient() user: users, @Param('id') id: string) {
+    return this.service.remove(id, user.id);
   }
 }

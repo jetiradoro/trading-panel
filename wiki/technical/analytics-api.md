@@ -16,6 +16,8 @@
 
 Módulo de **Business Intelligence** que proporciona un dashboard de analítica con KPIs, gráficos y métricas de rendimiento de inversiones. Calcula todas las métricas en tiempo real sobre las tablas existentes sin necesidad de tablas adicionales.
 
+**Scope**: Todos los endpoints operan **exclusivamente sobre la cuenta activa** del usuario autenticado.
+
 **Características principales:**
 - Balance de cuenta (total, invertido, disponible)
 - Métricas de rendimiento (P&L realizado/no realizado, win rate)
@@ -73,7 +75,8 @@ Obtiene todos los datos del dashboard en una sola llamada.
 **Query Params:**
 ```typescript
 {
-  period?: '7d' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
+  period?: '7d' | '1m' | '3m' | '6m' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
+  product?: 'trading' | 'etf';                    // Opcional (filtra datos de analitica)
   accountId?: string;                             // Opcional
 }
 ```
@@ -85,6 +88,12 @@ Obtiene todos los datos del dashboard en una sola llamada.
     totalFromTransactions: number;
     totalInvested: number;
     availableCash: number;
+    investedTrading: number;
+    investedEtf: number;
+    openPnLTrading: number;
+    openPnLEtf: number;
+    totalOpenPnL: number;
+    totalOpenValue: number;
   },
   performance: {
     realizedPnL: number;
@@ -104,7 +113,7 @@ Obtiene todos los datos del dashboard en una sola llamada.
 
 **Ejemplo:**
 ```bash
-GET /analytics/dashboard?period=30d
+GET /analytics/dashboard?period=30d&product=trading
 ```
 
 ---
@@ -124,8 +133,14 @@ Calcula el balance de cuenta.
 ```typescript
 {
   totalFromTransactions: number;  // Suma de transactions
-  totalInvested: number;          // Dinero en operaciones abiertas
+  totalInvested: number;          // Dinero en operaciones abiertas (global)
   availableCash: number;          // total - invested
+  investedTrading: number;        // Invertido solo en trading
+  investedEtf: number;            // Invertido solo en planes ETF
+  openPnLTrading: number;         // P&L abierto de trading
+  openPnLEtf: number;             // P&L abierto de ETF
+  totalOpenPnL: number;           // P&L abierto total
+  totalOpenValue: number;         // Invertido total + P&L abierto total
 }
 ```
 
@@ -144,7 +159,13 @@ Response:
 {
   "totalFromTransactions": 10000,
   "totalInvested": 6500,
-  "availableCash": 3500
+  "availableCash": 3500,
+  "investedTrading": 4200,
+  "investedEtf": 2300,
+  "openPnLTrading": 180,
+  "openPnLEtf": -40,
+  "totalOpenPnL": 140,
+  "totalOpenValue": 6640
 }
 ```
 
@@ -157,7 +178,8 @@ Calcula métricas de rendimiento global.
 **Query Params:**
 ```typescript
 {
-  period?: '7d' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
+  period?: '7d' | '1m' | '3m' | '6m' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
+  product?: 'trading' | 'etf';                  // Opcional (separa ETF vs Trading)
   accountId?: string;
 }
 ```
@@ -189,7 +211,7 @@ unrealizedPnL = (avgBuyPrice - currentPrice) * currentQuantity
 
 **Ejemplo:**
 ```bash
-GET /analytics/performance?period=30d
+GET /analytics/performance?period=30d&product=etf
 ```
 
 Response:
@@ -214,7 +236,8 @@ Ranking de símbolos ordenado por rendimiento total (P&L).
 **Query Params:**
 ```typescript
 {
-  period?: '7d' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
+  period?: '7d' | '1m' | '3m' | '6m' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
+  product?: 'trading' | 'etf';                  // Opcional (separa ETF vs Trading)
   accountId?: string;
 }
 ```
@@ -331,7 +354,7 @@ Evolución temporal del portfolio.
 **Query Params:**
 ```typescript
 {
-  period?: '7d' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
+  period?: '7d' | '1m' | '3m' | '6m' | '30d' | '90d' | '1y' | 'all';  // Default: '30d'
   accountId?: string;
 }
 ```
@@ -356,7 +379,7 @@ PortfolioPointDto[] = [
 
 **Ejemplo:**
 ```bash
-GET /analytics/portfolio-evolution?period=7d
+GET /analytics/portfolio-evolution?period=1y&product=trading
 ```
 
 Response:
@@ -387,13 +410,21 @@ Response:
 
 ```typescript
 class AnalyticsService {
-  getDashboard(userId: string, period?: string, accountId?: string): Promise<DashboardResponseDto>
+  getDashboard(userId: string, period?: string, accountId?: string, product?: 'trading' | 'etf'): Promise<DashboardResponseDto>
   getAccountBalance(userId: string, accountId?: string): Promise<AccountBalanceDto>
-  getPerformance(userId: string, period: string, accountId?: string): Promise<PerformanceDto>
+  getPerformance(userId: string, period: string, accountId?: string, product?: 'trading' | 'etf'): Promise<PerformanceDto>
   getSymbolsRanking(userId: string, period: string, accountId?: string): Promise<SymbolPerformanceDto[]>
   getProductDistribution(userId: string, accountId?: string): Promise<ProductDistributionDto[]>
-  getPortfolioEvolution(userId: string, period: string, accountId?: string): Promise<PortfolioPointDto[]>
+  getPortfolioEvolution(userId: string, period: string, accountId?: string, product?: 'trading' | 'etf'): Promise<PortfolioPointDto[]>
+  getMonthlyPerformance(userId: string, accountId?: string, product?: 'trading' | 'etf'): Promise<MonthlyPerformanceDto[]>
+  getEquityCurve(userId: string, period: string, accountId?: string, product?: 'trading' | 'etf'): Promise<EquityPointDto[]>
+  getRiskMetrics(userId: string, period: string, accountId?: string, product?: 'trading' | 'etf'): Promise<RiskMetricsDto>
 }
+
+**Fecha de cierre de operaciones:**
+- Para métricas que trabajan con operaciones cerradas (rendimiento mensual, curva de equity, métricas de riesgo),
+  se usa la **fecha de la última entrada** como fecha de cierre real.
+- Si una operación no tiene entradas, se usa `updatedAt` como fallback.
 ```
 
 **Métodos privados:**
@@ -419,6 +450,12 @@ Convierte periodo a fecha de inicio:
   totalFromTransactions: number;
   totalInvested: number;
   availableCash: number;
+  investedTrading: number;
+  investedEtf: number;
+  openPnLTrading: number;
+  openPnLEtf: number;
+  totalOpenPnL: number;
+  totalOpenValue: number;
 }
 ```
 

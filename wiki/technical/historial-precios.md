@@ -88,6 +88,8 @@ model symbols {
 
 ## Endpoints API
 
+**Nota**: El historial de precios es **privado por usuario y cuenta activa**.
+
 ### Símbolos - Historial de Precios
 
 **Base**: `/symbols/:symbolId/prices`
@@ -144,6 +146,7 @@ Obtener historial de precios de un símbolo.
 
 **Ordenamiento**: Descendente por fecha (`date DESC`)
 **Rango**: Solo último año (por `date`)
+**Scope**: Solo precios del símbolo en la **cuenta activa** del usuario.
 
 **Errores**:
 - `404` - Símbolo no encontrado

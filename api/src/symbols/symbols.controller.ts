@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  HttpException,
 } from '@nestjs/common';
 import { SymbolsService } from './symbols.service';
 import { CreateSymbolDto } from './dto/create-symbol.dto';
@@ -15,6 +16,9 @@ import { UpdateSymbolDto } from './dto/update-symbol.dto';
 import { CreatePriceHistoryDto } from './dto/create-price-history.dto';
 import { UpdatePriceHistoryDto } from './dto/update-price-history.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { AppClient } from '../common/decorators/app-client.decorator';
+import { users } from '@prisma/client';
+import { AccountsService } from '../accounts/accounts.service';
 
 /**
  * Controlador para gestionar símbolos de trading
@@ -22,60 +26,116 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 @Controller('symbols')
 @UseGuards(AuthGuard)
 export class SymbolsController {
-  constructor(private readonly service: SymbolsService) {}
+  constructor(
+    private readonly service: SymbolsService,
+    private readonly accountsService: AccountsService,
+  ) {}
 
   @Post()
-  create(@Body() data: CreateSymbolDto) {
-    return this.service.create(data);
+  async create(@AppClient() user: users, @Body() data: CreateSymbolDto) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.create(data, user.id, account.id);
   }
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  async findAll(@AppClient() user: users) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.findAll(user.id, account.id);
   }
 
   @Get('search')
-  search(@Query('q') query: string) {
-    return this.service.search(query || '');
+  async search(@AppClient() user: users, @Query('q') query: string) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.search(query || '', user.id, account.id);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  async findOne(@AppClient() user: users, @Param('id') id: string) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.findOne(id, user.id, account.id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: UpdateSymbolDto) {
-    return this.service.update(id, data);
+  async update(
+    @AppClient() user: users,
+    @Param('id') id: string,
+    @Body() data: UpdateSymbolDto,
+  ) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.update(id, data, user.id, account.id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  async remove(@AppClient() user: users, @Param('id') id: string) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.remove(id, user.id, account.id);
   }
 
   // Endpoints para historial de precios
   @Post(':id/prices')
-  addPrice(@Param('id') symbolId: string, @Body() data: CreatePriceHistoryDto) {
-    return this.service.addPrice(symbolId, data);
+  async addPrice(
+    @AppClient() user: users,
+    @Param('id') symbolId: string,
+    @Body() data: CreatePriceHistoryDto,
+  ) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.addPrice(symbolId, data, user.id, account.id);
   }
 
   @Get(':id/prices')
-  getPrices(@Param('id') symbolId: string) {
-    return this.service.getPrices(symbolId);
+  async getPrices(@AppClient() user: users, @Param('id') symbolId: string) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.getPrices(symbolId, user.id, account.id);
   }
 
   @Put(':id/prices/:priceId')
-  updatePrice(
+  async updatePrice(
+    @AppClient() user: users,
     @Param('id') symbolId: string,
     @Param('priceId') priceId: string,
     @Body() data: UpdatePriceHistoryDto,
   ) {
-    return this.service.updatePrice(symbolId, priceId, data);
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.updatePrice(symbolId, priceId, data, user.id, account.id);
   }
 
   @Delete(':id/prices/:priceId')
-  removePrice(@Param('id') symbolId: string, @Param('priceId') priceId: string) {
-    return this.service.removePrice(symbolId, priceId);
+  async removePrice(
+    @AppClient() user: users,
+    @Param('id') symbolId: string,
+    @Param('priceId') priceId: string,
+  ) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.removePrice(symbolId, priceId, user.id, account.id);
   }
 }

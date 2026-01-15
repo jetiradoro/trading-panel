@@ -58,10 +58,15 @@ describe('AnalyticsService', () => {
         {
           id: 'op-1',
           status: 'open',
+          product: 'stock',
+          type: 'long',
           entries: [
             { entryType: 'buy', quantity: 10, price: 100 },
             { entryType: 'sell', quantity: 2, price: 110 },
           ],
+          symbol: {
+            priceHistory: [{ price: 120 }],
+          },
         },
       ]);
 
@@ -70,6 +75,12 @@ describe('AnalyticsService', () => {
       expect(result.totalFromTransactions).toBe(10000);
       expect(result.totalInvested).toBe(780); // (10*100) - (2*110)
       expect(result.availableCash).toBe(9220); // 10000 - 780
+      expect(result.investedTrading).toBe(780);
+      expect(result.investedEtf).toBe(0);
+      expect(result.openPnLTrading).toBe(160); // (120 - 100) * 8
+      expect(result.openPnLEtf).toBe(0);
+      expect(result.totalOpenPnL).toBe(160);
+      expect(result.totalOpenValue).toBe(940);
     });
 
     it('should handle zero balance', async () => {
@@ -86,6 +97,12 @@ describe('AnalyticsService', () => {
       expect(result.totalFromTransactions).toBe(0);
       expect(result.totalInvested).toBe(0);
       expect(result.availableCash).toBe(0);
+      expect(result.investedTrading).toBe(0);
+      expect(result.investedEtf).toBe(0);
+      expect(result.openPnLTrading).toBe(0);
+      expect(result.openPnLEtf).toBe(0);
+      expect(result.totalOpenPnL).toBe(0);
+      expect(result.totalOpenValue).toBe(0);
     });
 
     it('should filter by accountId if provided', async () => {
@@ -107,7 +124,14 @@ describe('AnalyticsService', () => {
 
       expect(mockPrismaService.operations.findMany).toHaveBeenCalledWith({
         where: { userId, status: 'open', accountId },
-        include: { entries: true },
+        include: {
+          entries: true,
+          symbol: {
+            include: {
+              priceHistory: { orderBy: { date: 'desc' }, take: 1 },
+            },
+          },
+        },
       });
     });
   });
@@ -464,10 +488,10 @@ describe('AnalyticsService', () => {
       const period = '30d';
 
       mockPrismaService.operations.findMany.mockResolvedValue([
-        { balance: 100 },
-        { balance: 50 },
-        { balance: -30 },
-        { balance: -20 },
+        { balance: 100, updatedAt: new Date() },
+        { balance: 50, updatedAt: new Date() },
+        { balance: -30, updatedAt: new Date() },
+        { balance: -20, updatedAt: new Date() },
       ]);
 
       const result = await service.getRiskMetrics(userId, period);
@@ -499,8 +523,8 @@ describe('AnalyticsService', () => {
       const period = '30d';
 
       mockPrismaService.operations.findMany.mockResolvedValue([
-        { balance: 100 },
-        { balance: 50 },
+        { balance: 100, updatedAt: new Date() },
+        { balance: 50, updatedAt: new Date() },
       ]);
 
       const result = await service.getRiskMetrics(userId, period);
@@ -515,8 +539,8 @@ describe('AnalyticsService', () => {
       const period = '30d';
 
       mockPrismaService.operations.findMany.mockResolvedValue([
-        { balance: -100 },
-        { balance: -50 },
+        { balance: -100, updatedAt: new Date() },
+        { balance: -50, updatedAt: new Date() },
       ]);
 
       const result = await service.getRiskMetrics(userId, period);

@@ -2,7 +2,20 @@
   <div class="row q-col-gutter-md">
     <div class="col-12">
       <div class="row items-center justify-between q-mb-sm">
-        <div class="text-h6">Métricas de Riesgo</div>
+        <div class="row items-center q-gutter-sm">
+          <div class="text-h6">Métricas de Riesgo</div>
+          <q-chip
+            v-if="scopeLabel"
+            dense
+            :color="scopeChipColor"
+            :text-color="scopeChipTextColor"
+          >
+            {{ scopeLabel }}
+          </q-chip>
+          <q-chip v-if="periodLabel" dense color="amber-1" text-color="amber-9">
+            Periodo {{ periodLabel }}
+          </q-chip>
+        </div>
         <q-btn
           icon="info"
           flat
@@ -99,6 +112,8 @@ import type { RiskMetricsDto } from '../types';
 interface Props {
   data?: RiskMetricsDto | undefined;
   loading?: boolean;
+  scopeLabel?: string;
+  periodLabel?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -106,6 +121,12 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const showInfo = ref(false);
+const scopeChipColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'light-green-1' : 'light-blue-1'
+));
+const scopeChipTextColor = computed(() => (
+  props.scopeLabel === 'Planes ETF' ? 'green-10' : 'blue-10'
+));
 
 const infoContent = `
 <p><strong>¿Qué son las métricas de riesgo?</strong></p>
@@ -120,6 +141,7 @@ const infoContent = `
 <p><strong>¿Por qué son importantes?</strong></p>
 <p>Un trader puede ser rentable pero con métricas de riesgo pobres, lo que indica suerte o alta exposición.
 Estas métricas revelan si tu estrategia es sostenible a largo plazo.</p>
+<p><strong>Filtro aplicado:</strong> Estas métricas respetan el periodo seleccionado y la pestaña activa.</p>
 `;
 
 /**
