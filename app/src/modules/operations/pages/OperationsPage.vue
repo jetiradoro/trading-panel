@@ -1,12 +1,20 @@
 <template>
   <q-page>
     <OperationsFilters class="q-mt-md" @filter="handleFilter" />
-    <div class="row items-center justify-between text-caption text-grey-7 q-px-md q-mt-sm">
+    <div class="row items-center justify-between text-caption q-px-md q-mt-sm">
       <div class="row items-center q-gutter-md">
-        <span>Trading P&L: {{ filteredTradingBalance.toFixed(2) }} €</span>
-        <span>Trading Invertido: {{ filteredTradingInvestment.toFixed(2) }} €</span>
-        <span>ETF P&L: {{ filteredEtfBalance.toFixed(2) }} €</span>
-        <span>ETF Invertido: {{ filteredEtfInvestment.toFixed(2) }} €</span>
+        <span :class="filteredTradingBalance >= 0 ? 'text-positive' : 'text-negative'">
+          Trading P&L: {{ filteredTradingBalance.toFixed(2) }} €
+        </span>
+        <span class="text-white">
+          Trading Invertido: {{ filteredTradingInvestment.toFixed(2) }} €
+        </span>
+        <span :class="filteredEtfBalance >= 0 ? 'text-positive' : 'text-negative'">
+          ETF P&L: {{ filteredEtfBalance.toFixed(2) }} €
+        </span>
+        <span class="text-white">
+          ETF Invertido: {{ filteredEtfInvestment.toFixed(2) }} €
+        </span>
       </div>
       <div>Resultados: {{ filteredOperations.length }}</div>
     </div>

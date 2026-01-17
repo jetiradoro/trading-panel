@@ -5,6 +5,7 @@
 - orderna grafico de rendimiento mensual
 - arreglar modal de historico de precios para focus en precio
 - ordenacion manual de simbolos con drag & drop (solo en vista Todos)
+- colores para P&L e invertido en listado de operaciones
 
 
 ---
