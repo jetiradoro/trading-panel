@@ -8,15 +8,17 @@
       <q-card-section class="q-pt-none">
         <q-form @submit="savePrice">
           <q-input
+            ref="priceInput"
             v-model.number="priceForm.price"
             type="number"
             step="0.01"
             label="Precio"
+            placeholder="0"
             outlined
             dense
             :rules="[
-              (val) => val !== null && val !== '' || 'Campo requerido',
-              (val) => val > 0 || 'El precio debe ser mayor a 0'
+              (val) => (val !== null && val !== '') || 'Campo requerido',
+              (val) => val > 0 || 'El precio debe ser mayor a 0',
             ]"
             class="q-mb-md"
           />
@@ -42,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import { useSymbolsStore } from '../SymbolsStore';
 import { useQuasar } from 'quasar';
 
@@ -65,35 +67,43 @@ const $q = useQuasar();
 
 const isOpen = ref(props.modelValue);
 const priceForm = ref({
-  price: 0,
+  price: null,
   date: '',
 });
+const priceInput = ref<any>(null);
 
 /**
  * Sincronizar estado del dialog con v-model
  */
-watch(() => props.modelValue, (value) => {
-  isOpen.value = value;
-  if (value && props.editPrice) {
-    // Si estamos editando, cargar datos del precio
-    const date = new Date(props.editPrice.date);
-    const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - offset * 60 * 1000);
-    priceForm.value = {
-      price: props.editPrice.price,
-      date: localDate.toISOString().slice(0, 16),
-    };
-  } else if (value) {
-    // Si es nuevo, inicializar con fecha actual
-    const now = new Date();
-    const offset = now.getTimezoneOffset();
-    const localDate = new Date(now.getTime() - offset * 60 * 1000);
-    priceForm.value = {
-      price: 0,
-      date: localDate.toISOString().slice(0, 16),
-    };
-  }
-});
+watch(
+  () => props.modelValue,
+  async (value) => {
+    isOpen.value = value;
+    if (value && props.editPrice) {
+      // Si estamos editando, cargar datos del precio
+      const date = new Date(props.editPrice.date);
+      const offset = date.getTimezoneOffset();
+      const localDate = new Date(date.getTime() - offset * 60 * 1000);
+      priceForm.value = {
+        price: props.editPrice.price,
+        date: localDate.toISOString().slice(0, 16),
+      };
+    } else if (value) {
+      // Si es nuevo, inicializar con fecha actual
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const localDate = new Date(now.getTime() - offset * 60 * 1000);
+      priceForm.value = {
+        price: null,
+        date: localDate.toISOString().slice(0, 16),
+      };
+    }
+    if (value) {
+      await nextTick();
+      priceInput.value?.focus?.();
+    }
+  },
+);
 
 watch(isOpen, (value) => {
   emit('update:modelValue', value);
@@ -105,7 +115,7 @@ watch(isOpen, (value) => {
 const closeForm = () => {
   isOpen.value = false;
   priceForm.value = {
-    price: 0,
+    price: null,
     date: '',
   };
 };
@@ -116,16 +126,12 @@ const closeForm = () => {
 const savePrice = async () => {
   try {
     const payload = {
-      price: priceForm.value.price,
+      price: priceForm.value.price ?? 0,
       date: new Date(priceForm.value.date).toISOString(),
     };
 
     if (props.editPrice) {
-      await symbolsStore.updatePriceHistory(
-        props.symbolId,
-        props.editPrice.id,
-        payload
-      );
+      await symbolsStore.updatePriceHistory(props.symbolId, props.editPrice.id, payload);
       $q.notify({
         type: 'positive',
         message: 'Precio actualizado correctamente',

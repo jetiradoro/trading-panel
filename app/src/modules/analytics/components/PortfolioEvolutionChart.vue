@@ -4,12 +4,7 @@
       <div class="row items-center justify-between q-mb-sm">
         <div class="row items-center q-gutter-sm">
           <div class="text-h6">Evolución del Portfolio</div>
-          <q-chip
-            v-if="scopeLabel"
-            dense
-            :color="scopeChipColor"
-            :text-color="scopeChipTextColor"
-          >
+          <q-chip v-if="scopeLabel" dense :color="scopeChipColor" :text-color="scopeChipTextColor">
             {{ scopeLabel }}
           </q-chip>
           <q-chip dense color="deep-orange-1" text-color="deep-orange-9">
@@ -30,15 +25,7 @@
             toggle-text-color="white"
             size="sm"
           />
-          <q-btn
-            icon="info"
-            flat
-            dense
-            round
-            size="sm"
-            color="grey-6"
-            @click="showInfo = true"
-          />
+          <q-btn icon="info" flat dense round size="sm" color="grey-6" @click="showInfo = true" />
         </div>
       </div>
       <div v-if="loading" class="row justify-center q-pa-lg">
@@ -47,25 +34,16 @@
       <div v-else-if="!hasData" class="row justify-center q-pa-lg">
         <div class="text-grey-6">No hay datos disponibles en este rango</div>
       </div>
-      <apexchart
-        v-else
-        type="area"
-        height="300"
-        :options="chartOptions"
-        :series="series"
-      />
+      <apexchart v-else type="area" height="300" :options="chartOptions" :series="series" />
     </q-card-section>
 
-    <info-modal
-      v-model="showInfo"
-      title="Evolución del Portfolio"
-      :content="infoContent"
-    />
+    <info-modal v-model="showInfo" title="Evolución del Portfolio" :content="infoContent" />
   </q-card>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useQuasar } from 'quasar';
 import InfoModal from './InfoModal.vue';
 import type { PortfolioPointDto } from '../types';
 
@@ -90,7 +68,7 @@ const emit = defineEmits<{
 }>();
 
 const showInfo = ref(false);
-const range = ref<'7d' | '1m' | '3m' | '6m' | '1y' | 'all'>('3m');
+const range = ref<'7d' | '1m' | '3m' | '6m' | '1y' | 'all'>('all');
 const rangeOptions = [
   { label: '7D', value: '7d' },
   { label: '1M', value: '1m' },
@@ -129,12 +107,14 @@ const rangeLabel = computed(() => {
   return labels[range.value] || range.value;
 });
 
-const scopeChipColor = computed(() => (
-  props.scopeLabel === 'Planes ETF' ? 'light-green-1' : 'light-blue-1'
-));
-const scopeChipTextColor = computed(() => (
-  props.scopeLabel === 'Planes ETF' ? 'green-10' : 'blue-10'
-));
+const scopeChipColor = computed(() =>
+  props.scopeLabel === 'Planes ETF' ? 'light-green-1' : 'light-blue-1',
+);
+const scopeChipTextColor = computed(() =>
+  props.scopeLabel === 'Planes ETF' ? 'green-10' : 'blue-10',
+);
+const $q = useQuasar();
+const isMobile = computed(() => $q.screen.lt.sm);
 
 watch(range, (value) => {
   emit('range-change', value);
@@ -180,9 +160,7 @@ const filteredData = computed(() => {
   if (!rangeStartMs.value) {
     return props.data;
   }
-  return props.data.filter(
-    (point) => new Date(point.date).getTime() >= rangeStartMs.value!,
-  );
+  return props.data.filter((point) => new Date(point.date).getTime() >= rangeStartMs.value!);
 });
 
 const hasData = computed(() => filteredData.value.length > 0);
@@ -259,6 +237,7 @@ const chartOptions = computed(() => ({
   },
   yaxis: {
     labels: {
+      show: !isMobile.value,
       formatter: (value: number) => {
         return new Intl.NumberFormat('es-ES', {
           style: 'currency',

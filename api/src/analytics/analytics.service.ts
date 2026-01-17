@@ -53,7 +53,8 @@ export class AnalyticsService {
     entries?: { date: Date }[],
     fallback?: Date,
   ): Date | null {
-    const entryDate = entries && entries.length > 0 ? new Date(entries[0].date) : null;
+    const entryDate =
+      entries && entries.length > 0 ? new Date(entries[0].date) : null;
     return entryDate || fallback || null;
   }
 
@@ -62,9 +63,7 @@ export class AnalyticsService {
    */
   private getProductFilter(product?: 'trading' | 'etf') {
     if (!product) return undefined;
-    return product === 'etf'
-      ? { product: 'etf' }
-      : { product: { not: 'etf' } };
+    return product === 'etf' ? { product: 'etf' } : { product: { not: 'etf' } };
   }
 
   /**
@@ -549,7 +548,9 @@ export class AnalyticsService {
         // Obtener precio de mercado más cercano a esta fecha
         const priceAtDate = op.symbol?.priceHistory
           .filter((p) => new Date(p.date) <= currentDate)
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+          .sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+          )[0];
 
         if (priceAtDate) {
           portfolioValue += currentQty * Number(priceAtDate.price);
@@ -584,6 +585,20 @@ export class AnalyticsService {
     product?: 'trading' | 'etf',
   ): Promise<MonthlyPerformanceDto[]> {
     const productFilter = this.getProductFilter(product);
+    const monthNames = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
     const operations = await this.prisma.operations.findMany({
       where: {
         userId,
@@ -611,7 +626,6 @@ export class AnalyticsService {
     for (const op of closedOpsWithDate) {
       const date = op.closeDate as Date;
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
       let data = monthsMap.get(monthKey);
       if (!data) {
@@ -630,18 +644,36 @@ export class AnalyticsService {
       data.operationsClosed++;
     }
 
-    const result = Array.from(monthsMap.values());
-    for (const month of result) {
-      const monthIndex = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].indexOf(month.month);
+    const resultEntries = Array.from(monthsMap.entries()).sort(([a], [b]) =>
+      a.localeCompare(b),
+    );
+
+    for (const [, month] of resultEntries) {
+      const monthIndex = [
+        'Ene',
+        'Feb',
+        'Mar',
+        'Abr',
+        'May',
+        'Jun',
+        'Jul',
+        'Ago',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dic',
+      ].indexOf(month.month);
       const monthOps = closedOpsWithDate.filter((op) => {
         const date = op.closeDate as Date;
-        return date.getFullYear() === month.year && date.getMonth() === monthIndex;
+        return (
+          date.getFullYear() === month.year && date.getMonth() === monthIndex
+        );
       });
-      const wins = monthOps.filter(op => (op.balance || 0) > 0).length;
+      const wins = monthOps.filter((op) => (op.balance || 0) > 0).length;
       month.winRate = monthOps.length > 0 ? (wins / monthOps.length) * 100 : 0;
     }
 
-    return result;
+    return resultEntries.map(([, month]) => month);
   }
 
   /**
@@ -654,7 +686,9 @@ export class AnalyticsService {
     product?: 'trading' | 'etf',
   ): Promise<EquityPointDto[]> {
     const dateFrom = this.getDateFromPeriod(period);
-    const startDate = dateFrom || new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const startDate =
+      dateFrom ||
+      new Date(new Date().setFullYear(new Date().getFullYear() - 1));
     const productFilter = this.getProductFilter(product);
 
     const transactions = await this.prisma.transactions.findMany({
@@ -688,7 +722,8 @@ export class AnalyticsService {
       }))
       .filter((op) => op.closeDate && (op.closeDate as Date) >= startDate);
 
-    const interval = period === '7d' ? 1 : period === '30d' ? 1 : period === '90d' ? 7 : 30;
+    const interval =
+      period === '7d' ? 1 : period === '30d' ? 1 : period === '90d' ? 7 : 30;
     const points: EquityPointDto[] = [];
     const now = new Date();
     let currentDate = new Date(startDate);
@@ -697,19 +732,23 @@ export class AnalyticsService {
       const dateStr = currentDate.toISOString().split('T')[0];
 
       const transactionsUntilNow = transactions
-        .filter(t => new Date(t.date) <= currentDate)
+        .filter((t) => new Date(t.date) <= currentDate)
         .reduce((sum, t) => sum + Number(t.amount), 0);
 
       const depositsUntilNow = transactions
-        .filter(t => Number(t.amount) > 0 && new Date(t.date) <= currentDate)
+        .filter((t) => Number(t.amount) > 0 && new Date(t.date) <= currentDate)
         .reduce((sum, t) => sum + Number(t.amount), 0);
 
-      const withdrawalsUntilNow = Math.abs(transactions
-        .filter(t => Number(t.amount) < 0 && new Date(t.date) <= currentDate)
-        .reduce((sum, t) => sum + Number(t.amount), 0));
+      const withdrawalsUntilNow = Math.abs(
+        transactions
+          .filter(
+            (t) => Number(t.amount) < 0 && new Date(t.date) <= currentDate,
+          )
+          .reduce((sum, t) => sum + Number(t.amount), 0),
+      );
 
       const pnlUntilNow = closedOpsWithDate
-        .filter(op => (op.closeDate as Date) <= currentDate)
+        .filter((op) => (op.closeDate as Date) <= currentDate)
         .reduce((sum, op) => sum + (op.balance || 0), 0);
 
       const equity = transactionsUntilNow + pnlUntilNow;
@@ -757,7 +796,10 @@ export class AnalyticsService {
 
     const filteredClosedOps = dateFrom
       ? closedOps.filter((op) => {
-          const closeDate = this.getOperationCloseDate(op.entries, op.updatedAt);
+          const closeDate = this.getOperationCloseDate(
+            op.entries,
+            op.updatedAt,
+          );
           return closeDate ? closeDate >= dateFrom : false;
         })
       : closedOps.map((op) => ({
@@ -778,23 +820,32 @@ export class AnalyticsService {
       };
     }
 
-    const wins = filteredClosedOps.filter(op => (op.balance || 0) > 0);
-    const losses = filteredClosedOps.filter(op => (op.balance || 0) < 0);
+    const wins = filteredClosedOps.filter((op) => (op.balance || 0) > 0);
+    const losses = filteredClosedOps.filter((op) => (op.balance || 0) < 0);
 
     const totalWins = wins.reduce((sum, op) => sum + (op.balance || 0), 0);
-    const totalLosses = Math.abs(losses.reduce((sum, op) => sum + (op.balance || 0), 0));
+    const totalLosses = Math.abs(
+      losses.reduce((sum, op) => sum + (op.balance || 0), 0),
+    );
 
     const avgWin = wins.length > 0 ? totalWins / wins.length : 0;
     const avgLoss = losses.length > 0 ? totalLosses / losses.length : 0;
 
-    const largestWin = wins.length > 0 ? Math.max(...wins.map(op => op.balance || 0)) : 0;
-    const largestLoss = losses.length > 0 ? Math.abs(Math.min(...losses.map(op => op.balance || 0))) : 0;
+    const largestWin =
+      wins.length > 0 ? Math.max(...wins.map((op) => op.balance || 0)) : 0;
+    const largestLoss =
+      losses.length > 0
+        ? Math.abs(Math.min(...losses.map((op) => op.balance || 0)))
+        : 0;
 
-    const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? 999 : 0;
+    const profitFactor =
+      totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? 999 : 0;
 
-    const returns = filteredClosedOps.map(op => op.balance || 0);
+    const returns = filteredClosedOps.map((op) => op.balance || 0);
     const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const variance =
+      returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) /
+      returns.length;
     const stdDev = Math.sqrt(variance);
     const sharpeRatio = stdDev > 0 ? avgReturn / stdDev : 0;
 
@@ -808,7 +859,10 @@ export class AnalyticsService {
         ...op,
         closeDate: this.getOperationCloseDate(op.entries, op.updatedAt),
       }))
-      .sort((a, b) => (a.closeDate as Date).getTime() - (b.closeDate as Date).getTime());
+      .sort(
+        (a, b) =>
+          (a.closeDate as Date).getTime() - (b.closeDate as Date).getTime(),
+      );
 
     for (const op of sortedOps) {
       equity += op.balance || 0;

@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useQuasar } from 'quasar';
 import InfoModal from './InfoModal.vue';
 import type { EquityPointDto } from '../types';
 
@@ -78,6 +79,8 @@ const scopeChipColor = computed(() => (
 const scopeChipTextColor = computed(() => (
   props.scopeLabel === 'Planes ETF' ? 'green-10' : 'blue-10'
 ));
+const $q = useQuasar();
+const isMobile = computed(() => $q.screen.lt.sm);
 
 const infoContent = `
 <p><strong>¿Qué muestra este gráfico?</strong></p>
@@ -175,6 +178,7 @@ const chartOptions = computed(() => ({
     {
       seriesName: 'Equity',
       labels: {
+        show: !isMobile.value,
         style: {
           colors: '#FFFFFF',
         },
@@ -196,6 +200,7 @@ const chartOptions = computed(() => ({
       opposite: true,
       seriesName: 'Drawdown',
       labels: {
+        show: !isMobile.value,
         style: {
           colors: '#FFFFFF',
         },

@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useQuasar } from 'quasar';
 
 interface PriceHistoryPoint {
   date: string;
@@ -73,6 +74,8 @@ const rangeOptions = [
   { label: '1A', value: '1y' },
   { label: 'Todo', value: 'all' },
 ];
+const $q = useQuasar();
+const isMobile = computed(() => $q.screen.lt.sm);
 
 const hasData = computed(() => props.priceHistory.length > 0 || props.entries.length > 0);
 
@@ -234,18 +237,20 @@ const chartOptions = computed(() => ({
   yaxis: [
     {
       title: {
-        text: 'Precio',
+        text: isMobile.value ? '' : 'Precio',
       },
       labels: {
+        show: !isMobile.value,
         formatter: formatCurrency,
       },
     },
     {
       opposite: true,
       title: {
-        text: 'Inversion neta',
+        text: isMobile.value ? '' : 'Inversion neta',
       },
       labels: {
+        show: !isMobile.value,
         formatter: formatCurrency,
       },
     },
