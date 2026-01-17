@@ -67,6 +67,7 @@ model symbols {
   name      String
   logo      String?
   product   String
+  sortOrder Int      @default(0)
   userId    String
   accountId String
   createdAt DateTime @default(now())
@@ -78,6 +79,7 @@ model symbols {
 
   @@index([userId])
   @@index([accountId])
+  @@index([accountId, sortOrder])
   @@unique([accountId, code])
 }
 

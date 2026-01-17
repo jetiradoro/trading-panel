@@ -21,6 +21,7 @@ Documentación detallada del backend, APIs, modelos de datos y lógica de negoci
 - [Operaciones - API](./technical/operaciones-api.md) - Sistema de operaciones de trading
 - [Historial de Precios - API](./technical/historial-precios.md) - Sistema de historial de precios de símbolos
 - [Analítica - API](./technical/analytics-api.md) - Sistema de Business Intelligence y dashboard
+- [Símbolos - API](./technical/symbols-api.md) - Gestión y ordenación de símbolos
 
 ---
 
@@ -40,6 +41,7 @@ Guías prácticas paso a paso para usar la aplicación.
 - [Operaciones - Guía de Usuario](./user-guide/operaciones.md) - Cómo gestionar tus inversiones
 - [Historial de Precios - Guía de Usuario](./user-guide/historial-precios.md) - Cómo gestionar el historial de precios
 - [Analítica - Guía de Usuario](./user-guide/analytics.md) - Cómo usar el dashboard de analítica
+- [Símbolos - Guía de Usuario](./user-guide/symbols.md) - Cómo gestionar y ordenar símbolos
 
 ---
 
@@ -107,6 +109,7 @@ Debe incluir:
 | Historial de Precios | ✅ Completado | [Ver](./technical/historial-precios.md) | [Ver](./user-guide/historial-precios.md) |
 | Analítica | ✅ Completado | [Ver](./technical/analytics-api.md) | [Ver](./user-guide/analytics.md) |
 | Autenticacion | ✅ Completado | [Ver](./technical/auth-api.md) | [Ver](./user-guide/auth.md) |
+| Símbolos | ✅ Completado | [Ver](./technical/symbols-api.md) | [Ver](./user-guide/symbols.md) |
 
 ---
 

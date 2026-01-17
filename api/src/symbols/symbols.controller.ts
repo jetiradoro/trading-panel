@@ -15,6 +15,7 @@ import { CreateSymbolDto } from './dto/create-symbol.dto';
 import { UpdateSymbolDto } from './dto/update-symbol.dto';
 import { CreatePriceHistoryDto } from './dto/create-price-history.dto';
 import { UpdatePriceHistoryDto } from './dto/update-price-history.dto';
+import { ReorderSymbolsDto } from './dto/reorder-symbols.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { AppClient } from '../common/decorators/app-client.decorator';
 import { users } from '@prisma/client';
@@ -65,6 +66,16 @@ export class SymbolsController {
       throw new HttpException('No active account found', 400);
     }
     return this.service.findOne(id, user.id, account.id);
+  }
+
+  @Put('reorder')
+  async reorder(@AppClient() user: users, @Body() data: ReorderSymbolsDto) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    await this.service.reorderSymbols(user.id, account.id, data.ids);
+    return { success: true };
   }
 
   @Put(':id')

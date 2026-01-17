@@ -1,6 +1,19 @@
 <template>
   <div class="symbol-item-wrapper">
     <q-item clickable class="symbol-item" @click="$emit('click')">
+      <q-item-section side v-if="draggable">
+        <q-icon
+          name="drag_indicator"
+          color="grey-6"
+          size="sm"
+          class="cursor-grab"
+          draggable="true"
+          @click.stop
+          @dragstart.stop="$emit('dragstart', symbol.id)"
+          @dragend.stop="$emit('dragend')"
+        />
+      </q-item-section>
+
       <q-item-section avatar>
         <q-avatar v-if="symbol.logo" size="md">
           <img :src="symbol.logo" :alt="symbol.code" />
@@ -56,11 +69,14 @@ const props = defineProps<{
   symbol: Symbol;
   pnl: number;
   operationsCount: number;
+  draggable?: boolean;
 }>();
 
 defineEmits<{
   click: [];
   delete: [];
+  dragstart: [string];
+  dragend: [];
 }>();
 
 const productLabel = computed(() => {

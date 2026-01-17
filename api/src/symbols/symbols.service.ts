@@ -35,11 +35,18 @@ export class SymbolsService {
       throw new ConflictException(`Symbol with code ${data.code} already exists`);
     }
 
+    const last = await this.prisma.symbols.aggregate({
+      where: { userId, accountId },
+      _max: { sortOrder: true },
+    });
+    const nextSortOrder = (last._max.sortOrder ?? -1) + 1;
+
     return this.prisma.symbols.create({
       data: {
         ...data,
         userId,
         accountId,
+        sortOrder: nextSortOrder,
       },
     });
   }
@@ -50,7 +57,7 @@ export class SymbolsService {
   findAll(userId: string, accountId: string): Promise<symbols[]> {
     return this.prisma.symbols.findMany({
       where: { userId, accountId },
-      orderBy: { code: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
     });
   }
 
@@ -67,8 +74,36 @@ export class SymbolsService {
           { name: { contains: query } },
         ],
       },
-      orderBy: { code: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
     });
+  }
+
+  /**
+   * Reordenar símbolos por lista de IDs
+   * @throws NotFoundException si algún símbolo no pertenece a la cuenta
+   */
+  async reorderSymbols(
+    userId: string,
+    accountId: string,
+    ids: string[],
+  ): Promise<void> {
+    const symbolsFound = await this.prisma.symbols.findMany({
+      where: { userId, accountId, id: { in: ids } },
+      select: { id: true },
+    });
+
+    if (symbolsFound.length !== ids.length) {
+      throw new NotFoundException('Símbolos no encontrados o fuera de la cuenta activa');
+    }
+
+    await this.prisma.$transaction(
+      ids.map((id, index) =>
+        this.prisma.symbols.update({
+          where: { id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
   }
 
   /**

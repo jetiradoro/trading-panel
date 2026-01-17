@@ -21,6 +21,7 @@ interface Symbol {
   name: string;
   logo?: string;
   product: string; // 'crypto' | 'stock' | 'etf'
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
   priceHistory?: PriceHistory[];
@@ -193,6 +194,34 @@ export const useSymbolsStore = defineStore('symbols', {
         throw error;
       } finally {
         this.loading = false;
+      }
+    },
+
+    /**
+     * Reordenar símbolos
+     */
+    async reorderSymbols(ids: string[]) {
+      const previous = [...this.symbols];
+      const orderMap = new Map(ids.map((id, index) => [id, index]));
+      this.symbols = [...this.symbols].sort((a, b) => {
+        const aOrder = orderMap.get(a.id);
+        const bOrder = orderMap.get(b.id);
+        if (aOrder === undefined || bOrder === undefined) {
+          return a.sortOrder - b.sortOrder;
+        }
+        return aOrder - bOrder;
+      });
+      this.symbols = this.symbols.map((symbol, index) => ({
+        ...symbol,
+        sortOrder: index,
+      }));
+
+      try {
+        await api.put('/symbols/reorder', { ids });
+      } catch (error) {
+        console.error('Error reordering symbols:', error);
+        this.symbols = previous;
+        throw error;
       }
     },
 

@@ -48,15 +48,25 @@
 
       <!-- Lista de símbolos -->
       <q-list v-if="filteredSymbols.length > 0">
-        <SymbolListItem
+        <div
           v-for="symbol in filteredSymbols"
           :key="symbol.id"
-          :symbol="symbol"
-          :pnl="symbolPnLMap[symbol.id] ?? 0"
-          :operations-count="symbolOperationsCountMap[symbol.id] ?? 0"
-          @click="editSymbol(symbol.id)"
-          @delete="handleDelete(symbol)"
-        />
+          class="symbol-drag-wrapper"
+          :class="{ 'symbol-drag-wrapper--over': dragOverId === symbol.id }"
+          @dragover.prevent="onDragOver(symbol.id)"
+          @drop.prevent="onDrop(symbol.id)"
+        >
+          <SymbolListItem
+            :symbol="symbol"
+            :pnl="symbolPnLMap[symbol.id] ?? 0"
+            :operations-count="symbolOperationsCountMap[symbol.id] ?? 0"
+            :draggable="canReorder"
+            @click="editSymbol(symbol.id)"
+            @delete="handleDelete(symbol)"
+            @dragstart="onDragStart"
+            @dragend="onDragEnd"
+          />
+        </div>
       </q-list>
 
       <div v-else class="text-center q-pa-md text-grey">No hay símbolos disponibles</div>
@@ -90,6 +100,8 @@ appStore.setSection('Símbolos');
 const loading = ref(false);
 const filterProduct = ref('');
 const search = ref('');
+const dragSourceId = ref<string | null>(null);
+const dragOverId = ref<string | null>(null);
 
 onMounted(async () => {
   loading.value = true;
@@ -107,7 +119,7 @@ const productFilterOptions = [
 ];
 
 const filteredSymbols = computed(() => {
-  let items = symbolsStore.symbols;
+  let items = [...symbolsStore.symbols].sort((a, b) => a.sortOrder - b.sortOrder);
   if (filterProduct.value) {
     items = items.filter((s) => s.product === filterProduct.value);
   }
@@ -119,6 +131,8 @@ const filteredSymbols = computed(() => {
   }
   return items;
 });
+
+const canReorder = computed(() => filterProduct.value === '' && search.value.trim() === '');
 
 const symbolPnLMap = computed(() => {
   return operationsStore.operations.reduce((acc, op) => {
@@ -152,6 +166,57 @@ const editSymbol = (symbolId: string) => {
   void router.push({ name: 'symbols.detail', params: { id: symbolId } });
 };
 
+const moveSymbol = (ids: string[], fromId: string, toId: string) => {
+  const fromIndex = ids.indexOf(fromId);
+  const toIndex = ids.indexOf(toId);
+  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+    return ids;
+  }
+  const next = [...ids];
+  const [moved] = next.splice(fromIndex, 1);
+  if (!moved) {
+    return ids;
+  }
+  next.splice(toIndex, 0, moved);
+  return next;
+};
+
+const onDragStart = (symbolId: string) => {
+  if (!canReorder.value) return;
+  dragSourceId.value = symbolId;
+};
+
+const onDragOver = (symbolId: string) => {
+  if (!canReorder.value) return;
+  dragOverId.value = symbolId;
+};
+
+const onDragEnd = () => {
+  dragSourceId.value = null;
+  dragOverId.value = null;
+};
+
+const onDrop = async (targetId: string) => {
+  if (!canReorder.value || !dragSourceId.value) return;
+  const ids = filteredSymbols.value.map((symbol) => symbol.id);
+  const nextOrder = moveSymbol(ids, dragSourceId.value, targetId);
+  dragSourceId.value = null;
+  dragOverId.value = null;
+
+  try {
+    await symbolsStore.reorderSymbols(nextOrder);
+    $q.notify({
+      type: 'positive',
+      message: 'Orden actualizado',
+    });
+  } catch {
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo guardar el orden',
+    });
+  }
+};
+
 const handleDelete = (symbol: any) => {
   $q.dialog({
     title: 'Eliminar símbolo',
@@ -179,3 +244,9 @@ const confirmDelete = async (symbolId: string) => {
   }
 };
 </script>
+
+<style scoped>
+.symbol-drag-wrapper--over {
+  outline: 1px dashed rgba(255, 255, 255, 0.4);
+}
+</style>

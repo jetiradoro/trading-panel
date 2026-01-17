@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## v2.0.1 - 17/01/26
+
+- orderna grafico de rendimiento mensual
+- arreglar modal de historico de precios para focus en precio
+- ordenacion manual de simbolos con drag & drop (solo en vista Todos)
+
+
+---
+
 ## v2.0.0 - 15/01/26
 
 - Refactorización de Backend para añadir seguridad de acceso a datos de usuario y cuenta correctos
