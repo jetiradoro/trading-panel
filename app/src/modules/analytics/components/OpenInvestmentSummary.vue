@@ -16,7 +16,12 @@
 
       <div class="row q-col-gutter-md q-mb-md">
         <div class="col-12 col-sm-4">
-          <kpi-card label="Invertido Trading" :value="balance.investedTrading" format="currency" />
+          <kpi-card
+            label="Invertido Trading"
+            :value="balance.investedTrading"
+            format="currency"
+            :link-to="{ name: 'operations' }"
+          />
         </div>
         <div class="col-12 col-sm-4">
           <kpi-card label="Invertido Planes ETF" :value="balance.investedEtf" format="currency" />

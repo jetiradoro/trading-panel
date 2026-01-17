@@ -1,5 +1,11 @@
 <template>
-  <q-card flat bordered class="kpi-card">
+  <q-card
+    flat
+    bordered
+    class="kpi-card"
+    :class="{ 'kpi-card--link cursor-pointer': isLink }"
+    @click="handleClick"
+  >
     <q-card-section>
       <div class="row items-center justify-between q-mb-xs">
         <div class="text-overline text-grey-7">{{ label }}</div>
@@ -11,7 +17,7 @@
           round
           size="sm"
           color="grey-6"
-          @click="showInfo = true"
+          @click.stop="showInfo = true"
         />
       </div>
       <div class="row items-baseline q-mt-sm">
@@ -40,6 +46,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useRouter, type RouteLocationRaw } from 'vue-router';
 import InfoModal from './InfoModal.vue';
 
 /**
@@ -54,6 +61,7 @@ interface Props {
   currency?: string;
   infoTitle?: string;
   infoContent?: string;
+  linkTo?: RouteLocationRaw;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -62,6 +70,13 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const showInfo = ref(false);
+const router = useRouter();
+const isLink = computed(() => !!props.linkTo);
+
+const handleClick = () => {
+  if (!props.linkTo) return;
+  void router.push(props.linkTo);
+};
 
 const formattedValue = computed(() => {
   switch (props.format) {
@@ -103,5 +118,9 @@ const changeColor = computed(() => {
   .q-card-section {
     padding: 16px;
   }
+}
+
+.kpi-card--link {
+  border-color: var(--q-primary);
 }
 </style>

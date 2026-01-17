@@ -5,6 +5,7 @@
         label="Balance Total"
         :value="balance.totalFromTransactions"
         format="currency"
+        :link-to="{ name: 'transactions' }"
         info-title="Balance Total"
         info-content="<p><strong>¿Qué muestra?</strong></p><p>El total de dinero que has depositado menos los retiros que has realizado.</p><p><strong>Fórmula:</strong> Depósitos - Retiros</p><p>Este valor representa el capital base que tienes disponible en tu cuenta, antes de considerar inversiones activas.</p>"
       />

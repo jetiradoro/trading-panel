@@ -8,20 +8,40 @@
       <!-- Header -->
       <div class="q-mb-md row items-center q-gutter-md">
         <div v-if="operation.symbol?.logo" class="col-auto">
-          <q-avatar size="80px">
+          <router-link v-if="symbolDetailRoute" :to="symbolDetailRoute" class="symbol-link">
+            <q-avatar size="80px">
+              <img :src="operation.symbol.logo" :alt="operation.symbol.code" />
+            </q-avatar>
+          </router-link>
+          <q-avatar v-else size="80px">
             <img :src="operation.symbol.logo" :alt="operation.symbol.code" />
           </q-avatar>
         </div>
         <div class="col">
-          <div class="text-h5">
-            {{ operation.symbol?.code || 'N/A' }}
-            <q-chip :color="statusColor" text-color="white" size="md">
-              {{ statusLabel }}
-            </q-chip>
-          </div>
-          <div class="text-subtitle2 text-grey">
-            {{ operation.symbol?.name || 'N/A' }}
-          </div>
+          <template v-if="symbolDetailRoute">
+            <router-link :to="symbolDetailRoute" class="symbol-link">
+              <div class="text-h5">
+                {{ operation.symbol?.code || 'N/A' }}
+                <q-chip :color="statusColor" text-color="white" size="md">
+                  {{ statusLabel }}
+                </q-chip>
+              </div>
+              <div class="text-subtitle2 text-grey">
+                {{ operation.symbol?.name || 'N/A' }}
+              </div>
+            </router-link>
+          </template>
+          <template v-else>
+            <div class="text-h5">
+              {{ operation.symbol?.code || 'N/A' }}
+              <q-chip :color="statusColor" text-color="white" size="md">
+                {{ statusLabel }}
+              </q-chip>
+            </div>
+            <div class="text-subtitle2 text-grey">
+              {{ operation.symbol?.name || 'N/A' }}
+            </div>
+          </template>
           <div class="text-subtitle2 text-grey">
             <span :class="`text-${typeColor}`">{{ typeLabel }}</span> · {{ productLabel }}
           </div>
@@ -159,11 +179,25 @@
       </q-card>
 
       <!-- Precio actual del símbolo -->
-      <q-card flat bordered class="q-mb-md" v-if="currentPrice">
+      <q-card
+        flat
+        bordered
+        class="q-mb-md"
+        v-if="currentPrice"
+        :class="{ 'cursor-pointer': symbolDetailRoute }"
+        @click="goToSymbolDetail"
+      >
         <q-card-section>
           <div class="row items-center">
             <div class="text-h6 col">Precio actual</div>
-            <q-btn flat dense round icon="add" color="primary" @click="showPriceForm = true" />
+            <q-btn
+              flat
+              dense
+              round
+              icon="add"
+              color="primary"
+              @click.stop="showPriceForm = true"
+            />
           </div>
         </q-card-section>
         <q-separator />
@@ -251,6 +285,10 @@ const showPriceForm = ref(false);
 const editingEntry = ref(null);
 
 const operation = computed(() => operationsStore.currentOperation);
+const symbolDetailRoute = computed(() => {
+  const symbolId = operation.value?.symbolId;
+  return symbolId ? { name: 'symbols.detail', params: { id: symbolId } } : null;
+});
 
 const currentPrice = computed(() => {
   return operation.value?.symbol?.priceHistory?.[0] || null;
@@ -447,4 +485,17 @@ const deleteOperation = async () => {
     });
   }
 };
+
+const goToSymbolDetail = () => {
+  if (!symbolDetailRoute.value) return;
+  void router.push(symbolDetailRoute.value);
+};
 </script>
+
+<style scoped>
+.symbol-link {
+  color: inherit;
+  text-decoration: none;
+  display: inline-block;
+}
+</style>

@@ -1,5 +1,8 @@
 <template>
-  <div class="symbol-ranking-item row items-center q-py-sm q-gutter-x-sm">
+  <router-link
+    class="symbol-ranking-item symbol-ranking-item--link row items-center q-py-sm q-gutter-x-sm"
+    :to="symbolRoute"
+  >
     <!-- Posición -->
     <div class="col-auto rank-number gt-xs">
       {{ rank }}
@@ -53,10 +56,11 @@
         :color="getSparklineColor(symbol.totalPnL)"
       />
     </div>
-  </div>
+  </router-link>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import SparklineChart from './SparklineChart.vue';
 import type { SymbolPerformanceDto } from '../types';
 
@@ -68,7 +72,11 @@ interface Props {
   rank: number;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+const symbolRoute = computed(() => ({
+  name: 'symbols.detail',
+  params: { id: props.symbol.symbolId },
+}));
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('es-ES', {
@@ -130,5 +138,11 @@ const getSparklineColor = (pnl: number): string => {
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
   }
+}
+
+.symbol-ranking-item--link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
 }
 </style>
