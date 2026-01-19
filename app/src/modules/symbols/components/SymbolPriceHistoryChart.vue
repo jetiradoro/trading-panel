@@ -2,9 +2,23 @@
   <q-card flat bordered class="q-mb-md">
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
-        <div class="text-h6">
-          Evolucion de precio
-          <span v-if="symbolCode" class="text-caption text-grey-7 q-ml-xs">({{ symbolCode }})</span>
+        <div class="column">
+          <div class="text-h6">
+            Evolucion de precio
+            <span v-if="symbolCode" class="text-caption text-grey-7 q-ml-xs">({{ symbolCode }})</span>
+          </div>
+          <div
+            v-if="periodChange"
+            class="row items-center text-caption"
+            :class="periodChange.isPositive ? 'text-positive' : 'text-negative'"
+          >
+            <q-icon
+              :name="periodChange.isPositive ? 'trending_up' : 'trending_down'"
+              size="16px"
+              class="q-mr-xs"
+            />
+            Periodo: {{ periodChange.label }}
+          </div>
         </div>
         <q-btn-toggle
           v-model="range"
@@ -55,13 +69,14 @@ const props = withDefaults(defineProps<Props>(), {
   symbolCode: '',
 });
 
-const range = ref<'7d' | '1m' | '3m' | '6m' | '1y' | 'all'>('3m');
+const range = ref<'7d' | '1m' | '3m' | '6m' | '1y' | '5y' | 'all'>('3m');
 const rangeOptions = [
   { label: '7D', value: '7d' },
   { label: '1M', value: '1m' },
   { label: '3M', value: '3m' },
   { label: '6M', value: '6m' },
   { label: '1A', value: '1y' },
+  { label: '5A', value: '5y' },
   { label: 'Todo', value: 'all' },
 ];
 const $q = useQuasar();
@@ -116,6 +131,8 @@ const rangeStartMs = computed(() => {
       return subtractMonths(maxDateMs.value, 6);
     case '1y':
       return subtractYears(maxDateMs.value, 1);
+    case '5y':
+      return subtractYears(maxDateMs.value, 5);
     default:
       return null;
   }
@@ -148,6 +165,38 @@ const formatCurrency = (value: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+
+const formatSignedPercent = (value: number) => {
+  const sign = value > 0 ? '+' : '';
+  const formatted = new Intl.NumberFormat('es-ES', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(value) / 100);
+  return `${sign}${formatted}`;
+};
+
+const periodChange = computed(() => {
+  const history = filteredPriceHistory.value;
+  if (history.length < 2) {
+    return null;
+  }
+  const firstPoint = history[0];
+  const lastPoint = history.at(-1);
+  if (!firstPoint || !lastPoint) {
+    return null;
+  }
+  const firstPrice = firstPoint.price;
+  const lastPrice = lastPoint.price;
+  if (firstPrice === 0) {
+    return null;
+  }
+  const change = ((lastPrice - firstPrice) / firstPrice) * 100;
+  return {
+    isPositive: change >= 0,
+    label: formatSignedPercent(change),
+  };
+});
 
 const chartOptions = computed(() => ({
   chart: {

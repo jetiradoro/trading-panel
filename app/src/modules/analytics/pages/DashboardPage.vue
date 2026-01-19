@@ -189,7 +189,9 @@ async function onProductChange() {
   await store.changeProductScope(store.productScope);
 }
 
-async function onPortfolioRangeChange(range: '7d' | '1m' | '3m' | '6m' | '1y' | 'all') {
+async function onPortfolioRangeChange(
+  range: '7d' | '1m' | '3m' | '6m' | '1y' | '5y' | 'all',
+) {
   await store.setPortfolioRange(range);
 }
 

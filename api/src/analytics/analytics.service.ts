@@ -40,6 +40,8 @@ export class AnalyticsService {
         return new Date(now.setDate(now.getDate() - 90));
       case '1y':
         return new Date(now.setFullYear(now.getFullYear() - 1));
+      case '5y':
+        return new Date(now.setFullYear(now.getFullYear() - 5));
       case 'all':
       default:
         return null;

@@ -2,14 +2,42 @@
   <q-card flat bordered>
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
-        <div class="row items-center q-gutter-sm">
-          <div class="text-h6">Evolución del Portfolio</div>
-          <q-chip v-if="scopeLabel" dense :color="scopeChipColor" :text-color="scopeChipTextColor">
-            {{ scopeLabel }}
-          </q-chip>
-          <q-chip dense color="deep-orange-1" text-color="deep-orange-9">
-            Rango {{ rangeLabel }}
-          </q-chip>
+        <div class="column">
+          <div class="row items-center q-gutter-sm">
+            <div class="text-h6">Evolución del Portfolio</div>
+            <q-chip v-if="scopeLabel" dense :color="scopeChipColor" :text-color="scopeChipTextColor">
+              {{ scopeLabel }}
+            </q-chip>
+            <q-chip dense color="deep-orange-1" text-color="deep-orange-9">
+              Rango {{ rangeLabel }}
+            </q-chip>
+          </div>
+          <div v-if="periodChangeInvested || periodChangeValue" class="row items-center q-gutter-md q-mt-xs">
+            <div
+              v-if="periodChangeInvested"
+              class="row items-center text-caption"
+              :class="periodChangeInvested.isPositive ? 'text-positive' : 'text-negative'"
+            >
+              <q-icon
+                :name="periodChangeInvested.isPositive ? 'trending_up' : 'trending_down'"
+                size="16px"
+                class="q-mr-xs"
+              />
+              Invertido: {{ periodChangeInvested.label }}
+            </div>
+            <div
+              v-if="periodChangeValue"
+              class="row items-center text-caption"
+              :class="periodChangeValue.isPositive ? 'text-positive' : 'text-negative'"
+            >
+              <q-icon
+                :name="periodChangeValue.isPositive ? 'trending_up' : 'trending_down'"
+                size="16px"
+                class="q-mr-xs"
+              />
+              Valor: {{ periodChangeValue.label }}
+            </div>
+          </div>
         </div>
         <div class="row items-center q-gutter-sm">
           <q-btn-toggle
@@ -64,17 +92,18 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'range-change', value: '7d' | '1m' | '3m' | '6m' | '1y' | 'all'): void;
+  (e: 'range-change', value: '7d' | '1m' | '3m' | '6m' | '1y' | '5y' | 'all'): void;
 }>();
 
 const showInfo = ref(false);
-const range = ref<'7d' | '1m' | '3m' | '6m' | '1y' | 'all'>('all');
+const range = ref<'7d' | '1m' | '3m' | '6m' | '1y' | '5y' | 'all'>('all');
 const rangeOptions = [
   { label: '7D', value: '7d' },
   { label: '1M', value: '1m' },
   { label: '3M', value: '3m' },
   { label: '6M', value: '6m' },
   { label: '1A', value: '1y' },
+  { label: '5A', value: '5y' },
   { label: 'Todo', value: 'all' },
 ];
 
@@ -102,6 +131,7 @@ const rangeLabel = computed(() => {
     '3m': '3M',
     '6m': '6M',
     '1y': '1A',
+    '5y': '5A',
     all: 'Todo',
   };
   return labels[range.value] || range.value;
@@ -147,6 +177,9 @@ const rangeStartMs = computed(() => {
     case '1y':
       date.setFullYear(date.getFullYear() - 1);
       break;
+    case '5y':
+      date.setFullYear(date.getFullYear() - 5);
+      break;
     default:
       return null;
   }
@@ -164,6 +197,51 @@ const filteredData = computed(() => {
 });
 
 const hasData = computed(() => filteredData.value.length > 0);
+
+const formatSignedPercent = (value: number) => {
+  const sign = value > 0 ? '+' : '';
+  const formatted = new Intl.NumberFormat('es-ES', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(value) / 100);
+  return `${sign}${formatted}`;
+};
+
+const getPeriodChange = (points: PortfolioPointDto[], valueKey: 'totalInvested' | 'portfolioValue') => {
+  if (points.length === 0) {
+    return null;
+  }
+  const lastPoint = points.at(-1);
+  if (!lastPoint) {
+    return null;
+  }
+  const firstNonZero = points.find((point) => point[valueKey] !== 0) ?? points[0];
+  if (!firstNonZero) {
+    return null;
+  }
+  const firstValue = firstNonZero[valueKey];
+  const lastValue = lastPoint[valueKey];
+  if (firstValue === 0) {
+    return {
+      isPositive: lastValue >= 0,
+      label: formatSignedPercent(0),
+    };
+  }
+  const change = ((lastValue - firstValue) / firstValue) * 100;
+  return {
+    isPositive: change >= 0,
+    label: formatSignedPercent(change),
+  };
+};
+
+const periodChangeInvested = computed(() =>
+  getPeriodChange(filteredData.value, 'totalInvested'),
+);
+
+const periodChangeValue = computed(() =>
+  getPeriodChange(filteredData.value, 'portfolioValue'),
+);
 
 const series = computed(() => {
   if (!filteredData.value || filteredData.value.length === 0) {

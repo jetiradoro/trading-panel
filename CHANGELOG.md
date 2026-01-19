@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v2.0.2 - 19/01/26
+
+- nuevo rango 5A en graficos de evolucion (simbolos, operacion, portfolio)
+- indicador de % de variacion con flecha y color por periodo en graficos de evolucion
+- porcentaje separado para invertido y valor del portfolio
+- soporte de periodo 5y en API de analitica
+- assets versionados con hash en build de Quasar para evitar cache en deploy
+
+---
+
 ## v2.0.1 - 17/01/26
 
 - orderna grafico de rendimiento mensual

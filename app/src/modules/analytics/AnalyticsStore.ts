@@ -23,7 +23,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   // Estado
   const period = ref<PeriodType>('all');
   const productScope = ref<ProductScope>('trading');
-  const portfolioRange = ref<'7d' | '1m' | '3m' | '6m' | '1y' | 'all'>('3m');
+  const portfolioRange = ref<'7d' | '1m' | '3m' | '6m' | '1y' | '5y' | 'all'>('3m');
   const accountBalance = ref<AccountBalanceDto | null>(null);
   const performance = ref<PerformanceDto | null>(null);
   const symbolsRanking = ref<SymbolPerformanceDto[]>([]);

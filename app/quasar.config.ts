@@ -66,7 +66,26 @@ export default defineConfig((ctx) => {
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
+      extendViteConf (viteConf) {
+        // Ensure hashed asset filenames for cache-busting in production builds.
+        viteConf.build ??= {};
+        viteConf.build.rollupOptions ??= {};
+        const output = viteConf.build.rollupOptions.output;
+        const applyHashing = (out: Record<string, unknown>) => {
+          out.entryFileNames ??= 'assets/[name].[hash].js';
+          out.chunkFileNames ??= 'assets/[name].[hash].js';
+          out.assetFileNames ??= 'assets/[name].[hash].[ext]';
+        };
+        if (Array.isArray(output)) {
+          output.forEach((item) => applyHashing(item as Record<string, unknown>));
+        } else if (output) {
+          applyHashing(output as Record<string, unknown>);
+        } else {
+          const newOutput = {};
+          applyHashing(newOutput);
+          viteConf.build.rollupOptions.output = newOutput;
+        }
+      },
       // viteVuePluginOptions: {},
 
       vitePlugins: [
