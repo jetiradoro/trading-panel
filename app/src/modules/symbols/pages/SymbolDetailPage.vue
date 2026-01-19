@@ -175,20 +175,26 @@ const editingPrice = ref<any>(null);
 const symbol = computed(() => symbolsStore.currentSymbol);
 const priceHistory = computed(() => symbol.value?.priceHistory || []);
 const page = ref(1);
-const rowsPerPage = ref(10);
+const rowsPerPage = ref(5);
 const rowsPerPageOptions = [5, 10, 20, 50];
 
+const sortedPriceHistory = computed(() => {
+  return [...priceHistory.value].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+});
+
 const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(priceHistory.value.length / rowsPerPage.value));
+  return Math.max(1, Math.ceil(sortedPriceHistory.value.length / rowsPerPage.value));
 });
 
 const paginatedPrices = computed(() => {
   const start = (page.value - 1) * rowsPerPage.value;
-  return priceHistory.value.slice(start, start + rowsPerPage.value);
+  return sortedPriceHistory.value.slice(start, start + rowsPerPage.value);
 });
 
 const currentPrice = computed(() => {
-  return priceHistory.value?.[0] || null;
+  return sortedPriceHistory.value?.[0] || null;
 });
 
 onMounted(async () => {

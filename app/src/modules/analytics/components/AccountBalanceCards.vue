@@ -27,7 +27,7 @@
         :value="balance.availableCash"
         format="currency"
         info-title="Efectivo Disponible"
-        info-content="<p><strong>¿Qué muestra?</strong></p><p>El dinero que tienes libre para realizar nuevas inversiones.</p><p><strong>Fórmula:</strong> Balance Total - Dinero Invertido</p><p>Si este valor es negativo, significa que has invertido más de lo que has depositado (posiblemente usando ganancias previas).</p>"
+        info-content="<p><strong>¿Qué muestra?</strong></p><p>El dinero que tienes libre para realizar nuevas inversiones.</p><p><strong>Fórmula:</strong> Balance Total + P&L realizado - Dinero Invertido</p><p>Si este valor es negativo, significa que has invertido más de lo que has depositado (posiblemente usando ganancias previas).</p>"
       />
     </div>
   </div>

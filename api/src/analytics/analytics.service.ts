@@ -155,7 +155,21 @@ export class AnalyticsService {
       }
     }
 
-    const availableCash = totalFromTransactions - totalInvested;
+    const closedOperations = await this.prisma.operations.findMany({
+      where: {
+        userId,
+        status: 'closed',
+        ...(accountId && { accountId }),
+      },
+      select: { balance: true },
+    });
+
+    const realizedPnL = closedOperations.reduce(
+      (sum, op) => sum + (op.balance || 0),
+      0,
+    );
+
+    const availableCash = totalFromTransactions + realizedPnL - totalInvested;
     const totalOpenPnL = openPnLTrading + openPnLEtf;
     const totalOpenValue = totalInvested + totalOpenPnL;
 
@@ -163,6 +177,7 @@ export class AnalyticsService {
       totalFromTransactions,
       totalInvested,
       availableCash,
+      realizedPnL,
       investedTrading,
       investedEtf,
       openPnLTrading,

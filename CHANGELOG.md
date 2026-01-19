@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v2.0.3 - 19/01/26
+
+- disponible incluye P&L realizado en el balance del dashboard
+- historial de precios ordenado por fecha de precio y paginacion por defecto en 5
+
+---
+
 ## v2.0.2 - 19/01/26
 
 - nuevo rango 5A en graficos de evolucion (simbolos, operacion, portfolio)

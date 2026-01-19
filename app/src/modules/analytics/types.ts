@@ -6,6 +6,7 @@ export interface AccountBalanceDto {
   totalFromTransactions: number;
   totalInvested: number;
   availableCash: number;
+  realizedPnL: number;
   investedTrading: number;
   investedEtf: number;
   openPnLTrading: number;
