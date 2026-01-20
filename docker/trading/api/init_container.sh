@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# init_container.sh - Script de inicialización para el contenedor epolca-panel
-
 set -e
 
 # Aquí puedes agregar los comandos de inicialización necesarios
