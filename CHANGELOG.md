@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.1.0 - 20/01/26
+
+- sesiones multiples por usuario (refresh tokens por dispositivo)
+
+---
+
 ## v2.0.3 - 19/01/26
 
 - disponible incluye P&L realizado en el balance del dashboard

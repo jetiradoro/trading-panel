@@ -23,6 +23,22 @@ model users {
   token_expiration DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  sessions user_sessions[]
+}
+
+model user_sessions {
+  id               String   @id @default(cuid())
+  userId           String
+  refresh_token    String   @unique
+  token_expiration DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token_expiration])
 }
 
 model accounts {
@@ -58,6 +74,7 @@ model transactions {
   @@index([userId])
   @@index([origin])
   @@index([userId, date])
+  @@index([accountId], map: "transactions_accountId_fkey")
   @@index([accountId, date])
 }
 
