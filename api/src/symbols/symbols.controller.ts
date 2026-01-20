@@ -100,6 +100,16 @@ export class SymbolsController {
     return this.service.remove(id, user.id, account.id);
   }
 
+  @Post(':id/market-sync')
+  async manualMarketSync(@AppClient() user: users, @Param('id') id: string) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    await this.service.findOne(id, user.id, account.id);
+    return this.service.priceMarketSync(id);
+  }
+
   // Endpoints para historial de precios
   @Post(':id/prices')
   async addPrice(

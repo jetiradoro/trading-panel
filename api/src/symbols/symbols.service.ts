@@ -1,17 +1,28 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateSymbolDto } from './dto/create-symbol.dto';
 import { UpdateSymbolDto } from './dto/update-symbol.dto';
 import { CreatePriceHistoryDto } from './dto/create-price-history.dto';
 import { UpdatePriceHistoryDto } from './dto/update-price-history.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { symbols } from '@prisma/client';
+import { MarketProduct } from '../market-data/providers/market-data.provider';
+import { MarketDataService } from '../market-data/market-data.service';
+import { appendLog } from '../common/utils/log-writer';
 
 /**
  * Servicio para gestionar símbolos de trading (crypto, stocks)
  */
 @Injectable()
 export class SymbolsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly marketDataService: MarketDataService,
+  ) {}
 
   /**
    * Crear un nuevo símbolo
@@ -276,5 +287,110 @@ export class SymbolsService {
     return this.prisma.price_history.delete({
       where: { id: priceId },
     });
+  }
+
+  /**
+   * Forzar sincronizacion manual del precio del simbolo
+   */
+  async priceMarketSync(symbolId: string): Promise<any> {
+    const symbol = await this.prisma.symbols.findUnique({
+      where: { id: symbolId },
+    });
+
+    if (!symbol) {
+      throw new NotFoundException(`Symbol with id ${symbolId} not found`);
+    }
+
+    if (!symbol.marketCode) {
+      throw new BadRequestException('Market code no configurado');
+    }
+
+    const quote = await this.marketDataService.getLatestPrice(
+      symbol.marketCode,
+      symbol.product as MarketProduct,
+      symbol.marketProvider,
+      { exchange: symbol.marketExchange || undefined },
+    );
+
+    if (!quote) {
+      await this.prisma.symbols.update({
+        where: { id: symbol.id },
+        data: { marketSyncStatus: 'ok', marketSyncError: null },
+      });
+      return { success: false, skipped: true, reason: 'empty' };
+    }
+
+    const existing = await this.prisma.price_history.findFirst({
+      where: {
+        symbolId: symbol.id,
+        date: quote.date,
+        price: quote.price,
+      },
+    });
+
+    if (existing) {
+      await this.prisma.symbols.update({
+        where: { id: symbol.id },
+        data: { marketSyncStatus: 'ok', marketSyncError: null },
+      });
+      return { success: false, skipped: true, reason: 'duplicate' };
+    }
+
+    const created = await this.prisma.price_history.create({
+      data: {
+        symbolId: symbol.id,
+        userId: symbol.userId,
+        accountId: symbol.accountId,
+        price: quote.price,
+        date: quote.date,
+      },
+    });
+
+    await this.prisma.symbols.update({
+      where: { id: symbol.id },
+      data: { marketSyncStatus: 'ok', marketSyncError: null },
+    });
+
+    return created;
+  }
+
+  /**
+   * Sincroniza precios de simbolos en operaciones abiertas.
+   */
+  async syncOpenOperationsMarketPrices(): Promise<void> {
+    const openOperations = await this.prisma.operations.findMany({
+      where: { status: 'open' },
+      select: { symbolId: true },
+    });
+
+    const symbolIds = Array.from(new Set(openOperations.map((o) => o.symbolId)));
+    if (!symbolIds.length) return;
+
+    const symbolsToSync = await this.prisma.symbols.findMany({
+      where: {
+        id: { in: symbolIds },
+        marketCode: { not: null },
+        marketProvider: { not: null },
+      },
+    });
+
+    for (const symbol of symbolsToSync) {
+      try {
+        await this.priceMarketSync(symbol.id);
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.message || error?.message || 'Unknown error';
+
+        await this.prisma.symbols.update({
+          where: { id: symbol.id },
+          data: { marketSyncStatus: 'error', marketSyncError: message },
+        });
+
+        await appendLog(
+          'market_sync_errors.log',
+          `ERROR symbolId=${symbol.id} symbolCode=${symbol.code} marketCode=${symbol.marketCode} message="${message}"`,
+        );
+      }
+    }
   }
 }

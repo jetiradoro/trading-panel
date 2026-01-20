@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## v3.0.0 - 20/01/26
+
+- sync automático de precios (cron) con logging dedicado
+- sync manual de precios desde detalle del símbolo
+- proveedores de mercado por símbolo y selector UI
+- manejo de errores del proveedor y estado de sync en símbolos
+
+---
+
 ## v2.1.0 - 20/01/26
 
 - sesiones multiples por usuario (refresh tokens por dispositivo)

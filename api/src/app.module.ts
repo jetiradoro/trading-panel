@@ -13,6 +13,9 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { SymbolsModule } from './symbols/symbols.module';
 import { OperationsModule } from './operations/operations.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { MarketDataModule } from './market-data/market-data.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { MarketSyncCron } from './market-data/market-sync.cron';
 
 @Module({
   imports: [
@@ -21,6 +24,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
       envFilePath: '../.env',
       load: [config],
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     PrismaModule,
@@ -29,9 +33,10 @@ import { AnalyticsModule } from './analytics/analytics.module';
     SymbolsModule,
     OperationsModule,
     AnalyticsModule,
+    MarketDataModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, MarketSyncCron],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

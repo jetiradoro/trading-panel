@@ -7,6 +7,15 @@ export class CreateSymbolDto {
   @IsNotEmpty()
   code: string;
 
+  @IsOptional()
+  marketCode?: string;
+
+  @IsOptional()
+  marketProvider?: string;
+
+  @IsOptional()
+  marketExchange?: string;
+
   @IsNotEmpty()
   name: string;
 

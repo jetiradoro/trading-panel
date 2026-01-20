@@ -22,6 +22,7 @@ Documentación detallada del backend, APIs, modelos de datos y lógica de negoci
 - [Historial de Precios - API](./technical/historial-precios.md) - Sistema de historial de precios de símbolos
 - [Analítica - API](./technical/analytics-api.md) - Sistema de Business Intelligence y dashboard
 - [Símbolos - API](./technical/symbols-api.md) - Gestión y ordenación de símbolos
+- [Market Sync - API](./technical/market-sync.md) - Cron y actualización de precios
 - [Navegación Interna - UI](./technical/navigation-links.md) - Enlaces entre secciones
 
 ---
@@ -43,6 +44,7 @@ Guías prácticas paso a paso para usar la aplicación.
 - [Historial de Precios - Guía de Usuario](./user-guide/historial-precios.md) - Cómo gestionar el historial de precios
 - [Analítica - Guía de Usuario](./user-guide/analytics.md) - Cómo usar el dashboard de analítica
 - [Símbolos - Guía de Usuario](./user-guide/symbols.md) - Cómo gestionar y ordenar símbolos
+- [Market Sync - Guía de Usuario](./user-guide/market-sync.md) - Sincronización automática
 - [Navegación Interna](./user-guide/navigation-links.md) - Enlaces rápidos entre secciones
 
 ---

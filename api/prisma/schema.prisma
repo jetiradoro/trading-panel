@@ -81,6 +81,11 @@ model transactions {
 model symbols {
   id        String   @id @default(cuid())
   code      String
+  marketCode String?
+  marketProvider String?
+  marketExchange String?
+  marketSyncStatus String?
+  marketSyncError String? @db.VarChar(500)
   name      String
   logo      String?
   product   String

@@ -33,13 +33,33 @@
                     <q-badge :color="productColor" :label="productLabel" />
                   </div>
                 </div>
-                <div class="text-right">
+                <div class="text-right column items-end">
                   <div class="text-caption text-grey">P&amp;L total</div>
                   <div class="text-h6" :class="symbolPnLClass">
                     {{ symbolPnL.toFixed(2) }} €
                   </div>
                   <div class="text-caption text-grey q-mt-xs">
                     Operaciones: {{ symbolOperationsCount }}
+                  </div>
+                  <div class="row items-center justify-end q-gutter-xs q-mt-sm">
+                    <q-icon
+                      name="fiber_manual_record"
+                      :color="marketSyncEnabled && !marketSyncHasError ? 'positive' : 'negative'"
+                      size="12px"
+                    />
+                    <div class="text-caption text-grey">Market Sync</div>
+                    <div v-if="marketSyncHasError" class="text-caption text-negative">
+                      {{ marketSyncErrorMessage }}
+                    </div>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      icon="sync"
+                      color="primary"
+                      size="sm"
+                      @click="handleManualSync"
+                    />
                   </div>
                 </div>
               </div>
@@ -239,6 +259,49 @@ const symbolPnLClass = computed(() => {
   return symbolPnL.value >= 0 ? 'text-positive' : 'text-negative';
 });
 
+const marketSyncEnabled = computed(
+  () => !!symbol.value?.marketCode && !!symbol.value?.marketProvider,
+);
+const marketSyncHasError = computed(() => symbol.value?.marketSyncStatus === 'error');
+const marketSyncErrorMessage = computed(() => symbol.value?.marketSyncError || '');
+
+const handleManualSync = async () => {
+  if (!marketSyncEnabled.value) {
+    $q.notify({
+      type: 'negative',
+      message: 'Market Sync no configurado',
+    });
+    return;
+  }
+
+  try {
+    const result = await symbolsStore.manualMarketSync(symbolId.value);
+    await refreshSymbol();
+    $q.notify({
+      type: 'positive',
+      message: result?.skipped
+        ? 'Sin cambios (precio ya registrado)'
+        : 'Sincronizacion completada',
+    });
+  } catch (error) {
+    const status = (error as any)?.response?.status;
+    const responseMessage =
+      (error as any)?.response?.data?.message ||
+      (error as any)?.message ||
+      symbolsStore.error ||
+      '';
+    const notFoundMessage = symbol.value?.marketCode
+      ? `El código ${symbol.value.marketCode} es incorrecto o no se encuentra`
+      : 'El código es incorrecto o no se encuentra';
+    $q.notify({
+      type: 'negative',
+      message:
+        status === 404
+          ? notFoundMessage
+          : responseMessage || 'Error al sincronizar',
+    });
+  }
+};
 const symbolOperationsCount = computed(() => {
   return operationsStore.operations.length;
 });

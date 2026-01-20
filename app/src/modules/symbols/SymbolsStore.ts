@@ -18,6 +18,11 @@ interface PriceHistory {
 interface Symbol {
   id: string;
   code: string;
+  marketCode?: string;
+  marketProvider?: string;
+  marketExchange?: string;
+  marketSyncStatus?: string;
+  marketSyncError?: string;
   name: string;
   logo?: string;
   product: string; // 'crypto' | 'stock' | 'etf'
@@ -32,6 +37,9 @@ interface Symbol {
  */
 interface NewSymbolDto {
   code: string;
+  marketCode?: string;
+  marketProvider?: string;
+  marketExchange?: string;
   name: string;
   logo?: string;
   product: string;
@@ -42,6 +50,9 @@ interface NewSymbolDto {
  */
 interface UpdateSymbolDto {
   code?: string;
+  marketCode?: string;
+  marketProvider?: string;
+  marketExchange?: string;
   name?: string;
   logo?: string;
   product?: string;
@@ -68,6 +79,8 @@ interface SymbolsState {
   currentSymbol: Symbol | null;
   loading: boolean;
   error: string | null;
+  marketProviders: { code: string; label: string }[];
+  defaultMarketProvider: string;
 }
 
 export const useSymbolsStore = defineStore('symbols', {
@@ -76,6 +89,8 @@ export const useSymbolsStore = defineStore('symbols', {
     currentSymbol: null,
     loading: false,
     error: null,
+    marketProviders: [],
+    defaultMarketProvider: 'eodhd',
   }),
 
   actions: {
@@ -93,6 +108,21 @@ export const useSymbolsStore = defineStore('symbols', {
         this.error = 'Error al cargar símbolos';
       } finally {
         this.loading = false;
+      }
+    },
+
+    /**
+     * Obtener proveedores de mercado configurados
+     */
+    async fetchMarketProviders() {
+      try {
+        const { data } = await api.get('/market-data/providers');
+        this.marketProviders = data.providers || [];
+        this.defaultMarketProvider = data.defaultProvider || 'eodhd';
+      } catch (error) {
+        console.error('Error fetching market providers:', error);
+        this.marketProviders = [];
+        this.defaultMarketProvider = 'eodhd';
       }
     },
 
@@ -191,6 +221,30 @@ export const useSymbolsStore = defineStore('symbols', {
       } catch (error) {
         console.error('Error deleting symbol:', error);
         this.error = 'Error al eliminar símbolo';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Forzar sincronizacion manual del precio
+     */
+    async manualMarketSync(symbolId: string) {
+      try {
+        this.loading = true;
+        this.error = null;
+        const { data } = await api.post(`/symbols/${symbolId}/market-sync`);
+        return data;
+      } catch (error) {
+        console.error('Error syncing market price:', error);
+        const responseMessage =
+          (error as any)?.response?.data?.message ||
+          (error as any)?.message ||
+          null;
+        this.error = Array.isArray(responseMessage)
+          ? responseMessage.join(', ')
+          : responseMessage || 'Error al sincronizar precio de mercado';
         throw error;
       } finally {
         this.loading = false;

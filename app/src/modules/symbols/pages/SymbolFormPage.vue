@@ -21,13 +21,7 @@
         :rules="[(val) => !!val || 'Campo requerido']"
       />
 
-      <q-input
-        v-model="symbol.logo"
-        label="Logo URL (opcional)"
-        outlined
-        dense
-        class="q-mb-md"
-      />
+      <q-input v-model="symbol.logo" label="Logo URL (opcional)" outlined dense class="q-mb-md" />
 
       <q-select
         v-model="symbol.product"
@@ -39,6 +33,28 @@
         map-options
         class="q-mb-md"
         :rules="[(val) => !!val || 'Campo requerido']"
+      />
+
+      <q-separator spaced class="q-mb-md" />
+
+      <span class="text-h6 q-mb-lg">Proveedor de precios</span>
+
+      <MarketProviderSelect class="q-mt-md" v-model="symbol.marketProvider" />
+
+      <q-input
+        v-model="symbol.marketCode"
+        label="Market Code (opcional)"
+        outlined
+        dense
+        class="q-mb-md"
+      />
+
+      <q-input
+        v-model="symbol.marketExchange"
+        label="Market Exchange (opcional)"
+        outlined
+        dense
+        class="q-mb-md"
       />
 
       <div class="q-mt-md row q-gutter-sm">
@@ -61,6 +77,7 @@ import { useAppStore } from 'src/stores/app';
 import { useSymbolsStore } from '../SymbolsStore';
 import { products } from 'src/config';
 import { useQuasar } from 'quasar';
+import MarketProviderSelect from 'src/components/MarketProviderSelect.vue';
 
 const appStore = useAppStore();
 const symbolsStore = useSymbolsStore();
@@ -84,6 +101,9 @@ const saving = ref(false);
 
 const symbol = ref({
   code: '',
+  marketCode: '',
+  marketProvider: '',
+  marketExchange: '',
   name: '',
   logo: '',
   product: '',
@@ -101,6 +121,9 @@ onMounted(async () => {
       if (existingSymbol) {
         symbol.value = {
           code: existingSymbol.code,
+          marketCode: existingSymbol.marketCode || '',
+          marketProvider: existingSymbol.marketProvider || '',
+          marketExchange: existingSymbol.marketExchange || '',
           name: existingSymbol.name,
           logo: existingSymbol.logo || '',
           product: existingSymbol.product,
@@ -132,6 +155,18 @@ async function save() {
       name: symbol.value.name,
       product: symbol.value.product,
     };
+
+    if (symbol.value.marketCode) {
+      payload.marketCode = symbol.value.marketCode;
+    }
+
+    if (symbol.value.marketProvider) {
+      payload.marketProvider = symbol.value.marketProvider;
+    }
+
+    if (symbol.value.marketExchange) {
+      payload.marketExchange = symbol.value.marketExchange;
+    }
 
     if (symbol.value.logo) {
       payload.logo = symbol.value.logo;
