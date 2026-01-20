@@ -43,7 +43,9 @@ export class SymbolsService {
     });
 
     if (existing) {
-      throw new ConflictException(`Symbol with code ${data.code} already exists`);
+      throw new ConflictException(
+        `Symbol with code ${data.code} already exists`,
+      );
     }
 
     const last = await this.prisma.symbols.aggregate({
@@ -75,15 +77,16 @@ export class SymbolsService {
   /**
    * Buscar símbolos por texto (código o nombre)
    */
-  async search(query: string, userId: string, accountId: string): Promise<symbols[]> {
+  async search(
+    query: string,
+    userId: string,
+    accountId: string,
+  ): Promise<symbols[]> {
     return this.prisma.symbols.findMany({
       where: {
         userId,
         accountId,
-        OR: [
-          { code: { contains: query } },
-          { name: { contains: query } },
-        ],
+        OR: [{ code: { contains: query } }, { name: { contains: query } }],
       },
       orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
     });
@@ -104,7 +107,9 @@ export class SymbolsService {
     });
 
     if (symbolsFound.length !== ids.length) {
-      throw new NotFoundException('Símbolos no encontrados o fuera de la cuenta activa');
+      throw new NotFoundException(
+        'Símbolos no encontrados o fuera de la cuenta activa',
+      );
     }
 
     await this.prisma.$transaction(
@@ -121,7 +126,11 @@ export class SymbolsService {
    * Buscar símbolo por ID
    * @throws NotFoundException si no existe
    */
-  async findOne(id: string, userId: string, accountId: string): Promise<symbols> {
+  async findOne(
+    id: string,
+    userId: string,
+    accountId: string,
+  ): Promise<symbols> {
     const symbol = await this.prisma.symbols.findFirst({
       where: { id, userId, accountId },
     });
@@ -136,7 +145,11 @@ export class SymbolsService {
   /**
    * Buscar símbolo por código
    */
-  findByCode(code: string, userId: string, accountId: string): Promise<symbols | null> {
+  findByCode(
+    code: string,
+    userId: string,
+    accountId: string,
+  ): Promise<symbols | null> {
     return this.prisma.symbols.findFirst({
       where: { code, userId, accountId },
     });
@@ -160,7 +173,9 @@ export class SymbolsService {
       });
 
       if (existing) {
-        throw new ConflictException(`Symbol with code ${data.code} already exists`);
+        throw new ConflictException(
+          `Symbol with code ${data.code} already exists`,
+        );
       }
     }
 
@@ -174,7 +189,11 @@ export class SymbolsService {
    * Eliminar símbolo
    * @throws NotFoundException si no existe
    */
-  async remove(id: string, userId: string, accountId: string): Promise<symbols> {
+  async remove(
+    id: string,
+    userId: string,
+    accountId: string,
+  ): Promise<symbols> {
     await this.findOne(id, userId, accountId);
     return this.prisma.symbols.delete({ where: { id } });
   }
@@ -363,7 +382,9 @@ export class SymbolsService {
       select: { symbolId: true },
     });
 
-    const symbolIds = Array.from(new Set(openOperations.map((o) => o.symbolId)));
+    const symbolIds = Array.from(
+      new Set(openOperations.map((o) => o.symbolId)),
+    );
     if (!symbolIds.length) return;
 
     const symbolsToSync = await this.prisma.symbols.findMany({

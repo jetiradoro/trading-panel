@@ -71,13 +71,10 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
       throw new BadRequestException('EODHD config incompleta para stock');
     }
 
-    const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
     const endpoint = this.buildEndpoint('stock');
     const url = new URL(this.buildUrl(endpoint, symbolCode));
     url.searchParams.set('api_token', this.apiToken);
     url.searchParams.set('fmt', 'json');
-    url.searchParams.set('from', yesterday);
-    url.searchParams.set('to', yesterday);
     if (exchange) {
       url.searchParams.set('exchange', exchange);
     }
@@ -94,13 +91,17 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
     }
 
     const lastItem = data[data.length - 1];
-    if (!lastItem?.date || lastItem?.close === undefined || lastItem?.close === null) {
+    if (
+      !lastItem?.previousCloseDate ||
+      lastItem?.previousClose === undefined ||
+      lastItem?.previousClose === null
+    ) {
       return null;
     }
 
     return {
-      price: Number(lastItem.close),
-      date: new Date(lastItem.date),
+      price: Number(lastItem.previousClose),
+      date: new Date(lastItem.previousCloseDate),
       raw: lastItem,
     };
   }
@@ -116,13 +117,10 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
       throw new BadRequestException('EODHD config incompleta para etf');
     }
 
-    const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
     const endpoint = this.buildEndpoint('etf');
     const url = new URL(this.buildUrl(endpoint, symbolCode));
     url.searchParams.set('api_token', this.apiToken);
     url.searchParams.set('fmt', 'json');
-    url.searchParams.set('from', yesterday);
-    url.searchParams.set('to', yesterday);
     url.searchParams.set('type', 'etf');
     if (exchange) {
       url.searchParams.set('exchange', exchange);
@@ -131,8 +129,10 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
     let data: any;
     try {
       const response = await axios.get(url.toString());
+      console.log(response.data);
       data = response.data;
     } catch (error) {
+      console.log(error);
       mapMarketDataError(error, symbolCode);
     }
 
@@ -141,13 +141,17 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
     }
 
     const lastItem = data[data.length - 1];
-    if (!lastItem?.date || lastItem?.close === undefined || lastItem?.close === null) {
+    if (
+      !lastItem?.previousCloseDate ||
+      lastItem?.previousClose === undefined ||
+      lastItem?.previousClose === null
+    ) {
       return null;
     }
 
     return {
-      price: Number(lastItem.close),
-      date: new Date(lastItem.date),
+      price: Number(lastItem.previousClose),
+      date: new Date(lastItem.previousCloseDate),
       raw: lastItem,
     };
   }
