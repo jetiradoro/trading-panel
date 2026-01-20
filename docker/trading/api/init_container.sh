@@ -19,7 +19,7 @@ npx prisma generate
 if [ "$DOCKER_ENVIRONMENT" = "dev" ]; then
     npm run start:dev
 else
-    npm install
+#    npm install
     npm run start
 fi
 exit 0
