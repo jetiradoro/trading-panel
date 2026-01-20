@@ -4,9 +4,6 @@ ALTER TABLE `price_history` DROP FOREIGN KEY `price_history_accountId_fkey`;
 -- DropForeignKey
 ALTER TABLE `symbols` DROP FOREIGN KEY `symbols_accountId_fkey`;
 
--- AlterTable
-ALTER TABLE `user_sessions` ALTER COLUMN `updatedAt` DROP DEFAULT;
-
 -- CreateIndex
 CREATE INDEX `symbols_accountId_sortOrder_idx` ON `symbols`(`accountId`, `sortOrder`);
 

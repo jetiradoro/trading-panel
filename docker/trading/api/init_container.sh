@@ -13,6 +13,7 @@ if [ ! -d "/app/node_modules" ]; then
     npm install
 fi
 
+npx prisma migrate resolve --rolled-back 20260120062435_user_multi_session
 npx prisma migrate deploy
 npx prisma generate
 
