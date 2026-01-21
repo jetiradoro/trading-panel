@@ -101,7 +101,7 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
 
     return {
       price: Number(lastItem.previousClose),
-      date: new Date(lastItem.previousCloseDate),
+      date: this.buildCloseDate(lastItem.previousCloseDate),
       raw: lastItem,
     };
   }
@@ -151,7 +151,7 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
 
     return {
       price: Number(lastItem.previousClose),
-      date: new Date(lastItem.previousCloseDate),
+      date: this.buildCloseDate(lastItem.previousCloseDate),
       raw: lastItem,
     };
   }
@@ -197,6 +197,13 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
       ? normalizedEndpoint.replace('{symbol}', symbolCode)
       : `${normalizedEndpoint}${normalizedEndpoint.endsWith('/') ? '' : '/'}${symbolCode}`;
     return `${normalizedBase}${endpointWithSymbol}`;
+  }
+
+  /**
+   * Establece la hora de cierre a las 23:00:00 en una fecha base.
+   */
+  private buildCloseDate(dateValue: string): Date {
+    return dayjs(dateValue).hour(23).minute(0).second(0).millisecond(0).toDate();
   }
 
   /**

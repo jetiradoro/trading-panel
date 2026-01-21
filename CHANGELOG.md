@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v3.0.1 - 21/01/26
+
+- fecha de cierre con hora 23:00:00 para precios de stock y ETF en EODHD
+
+---
+
 ## v3.0.0 - 20/01/26
 
 - sync automático de precios (cron) con logging dedicado
