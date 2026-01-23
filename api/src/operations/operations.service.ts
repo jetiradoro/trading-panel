@@ -278,6 +278,10 @@ export class OperationsService {
       0,
     );
     const avgBuyPrice = buyQty > 0 ? buyTotal / buyQty : 0;
+    const totalFees = entries.reduce(
+      (sum: number, e: any) => sum + Number(e.tax || 0),
+      0,
+    );
 
     let unrealizedPnL: number | null = null;
     let pnlPercentage: number | null = null;
@@ -287,9 +291,9 @@ export class OperationsService {
       currentInvestment = avgBuyPrice * currentQty;
 
       if (operation.type === 'long') {
-        unrealizedPnL = (currentPrice - avgBuyPrice) * currentQty;
+        unrealizedPnL = (currentPrice - avgBuyPrice) * currentQty - totalFees;
       } else {
-        unrealizedPnL = (avgBuyPrice - currentPrice) * currentQty;
+        unrealizedPnL = (avgBuyPrice - currentPrice) * currentQty - totalFees;
       }
 
       // Calcular porcentaje de ganancia/pérdida

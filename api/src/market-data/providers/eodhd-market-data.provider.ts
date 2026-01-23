@@ -129,7 +129,7 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
     let data: any;
     try {
       const response = await axios.get(url.toString());
-      console.log(response.data);
+      // console.log(response.data);
       data = response.data;
     } catch (error) {
       console.log(error);
@@ -161,11 +161,49 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
    */
   private async getLatestCryptoPrice(
     symbolCode: string,
+    exchange?: string,
   ): Promise<MarketQuote | null> {
-    void symbolCode;
-    throw new NotImplementedException(
-      'No se ha definido el servicio de consulta para crypto',
-    );
+    if (!this.baseUrl || !this.apiToken || !this.cryptoEndpoint) {
+      throw new BadRequestException('EODHD config incompleta para crypto');
+    }
+
+    const endpoint = this.buildEndpoint('crypto');
+    const url = new URL(this.buildUrl(endpoint, symbolCode));
+    url.searchParams.set('api_token', this.apiToken);
+    url.searchParams.set('fmt', 'json');
+    url.searchParams.set('type', 'crypto');
+    if (exchange) {
+      url.searchParams.set('exchange', exchange);
+    }
+
+    let data: any;
+    try {
+      const response = await axios.get(url.toString());
+      // console.log(response.data);
+      data = response.data;
+    } catch (error) {
+      console.log(error);
+      mapMarketDataError(error, symbolCode);
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return null;
+    }
+
+    const lastItem = data[data.length - 1];
+    if (
+      !lastItem?.previousCloseDate ||
+      lastItem?.previousClose === undefined ||
+      lastItem?.previousClose === null
+    ) {
+      return null;
+    }
+
+    return {
+      price: Number(lastItem.previousClose),
+      date: this.buildCloseDate(lastItem.previousCloseDate),
+      raw: lastItem,
+    };
   }
 
   /**
@@ -203,7 +241,12 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
    * Establece la hora de cierre a las 23:00:00 en una fecha base.
    */
   private buildCloseDate(dateValue: string): Date {
-    return dayjs(dateValue).hour(23).minute(0).second(0).millisecond(0).toDate();
+    return dayjs(dateValue)
+      .hour(23)
+      .minute(0)
+      .second(0)
+      .millisecond(0)
+      .toDate();
   }
 
   /**

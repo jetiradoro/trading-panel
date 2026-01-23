@@ -26,9 +26,7 @@
           </div>
 
           <div class="col-12 col-sm-4 entry-total">
-            <q-item-label
-              >{{ (entry.quantity * entry.price + entry.tax).toFixed(2) }} €</q-item-label
-            >
+            <q-item-label>{{ entryTotal(entry).toFixed(2) }} €</q-item-label>
             <q-item-label v-if="entry.tax > 0" caption>Comisión: {{ entry.tax }} €</q-item-label>
           </div>
         </div>
@@ -86,6 +84,8 @@ const entryTypeColor = (type: string) => {
 const entryTypeIcon = (type: string) => {
   return type === 'buy' ? 'add' : 'remove';
 };
+
+const entryTotal = (entry: Entry) => entry.quantity * entry.price;
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);

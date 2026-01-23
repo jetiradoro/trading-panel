@@ -169,7 +169,7 @@ const investmentPoints = computed(() => {
   let cumulative = 0;
   return sortedEntries.value.map((entry) => {
     const direction = entry.entryType === 'buy' ? 1 : -1;
-    const amount = entry.quantity * entry.price + (entry.tax ?? 0);
+    const amount = entry.quantity * entry.price;
     cumulative += direction * amount;
     return {
       x: new Date(entry.date).getTime(),

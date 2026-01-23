@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v3.0.2 - 23/01/26
+
+- Configuración del método para obtener precios de cryptos
+
+---
+
 ## v3.0.1 - 21/01/26
 
 - fecha de cierre con hora 23:00:00 para precios de stock y ETF en EODHD
@@ -45,7 +51,6 @@
 - ordenacion manual de simbolos con drag & drop (solo en vista Todos)
 - colores para P&L e invertido en listado de operaciones
 - enlaces internos entre dashboard, operaciones, transacciones y simbolos
-
 
 ---
 
