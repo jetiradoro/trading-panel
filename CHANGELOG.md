@@ -3,6 +3,7 @@
 ## v3.0.2 - 23/01/26
 
 - Configuración del método para obtener precios de cryptos
+- modificación de posiciones y tasas, de forma que no figure en la posición pero si en el cómputo de posiciones abiertas
 
 ---
 
