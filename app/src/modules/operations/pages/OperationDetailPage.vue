@@ -190,6 +190,29 @@
         <q-card-section>
           <div class="row items-center">
             <div class="text-h6 col">Precio actual</div>
+            <q-chip
+              v-if="marketSyncEnabled"
+              dense
+              :color="marketSyncHasError ? 'negative' : 'positive'"
+              text-color="white"
+              class="q-mr-sm"
+            >
+              {{ marketSyncHasError ? 'Sync error' : 'Sync ok' }}
+              <q-tooltip v-if="marketSyncHasError">
+                {{ marketSyncErrorMessage }}
+              </q-tooltip>
+            </q-chip>
+            <q-btn
+              v-if="marketSyncEnabled"
+              flat
+              dense
+              round
+              icon="sync"
+              color="orange"
+              @click.stop="handleManualSync"
+            >
+              <q-tooltip>Sincronizar precio por market</q-tooltip>
+            </q-btn>
             <q-btn
               flat
               dense
@@ -265,6 +288,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppStore } from 'src/stores/app';
 import { useOperationsStore } from '../OperationsStore';
+import { useSymbolsStore } from 'src/modules/symbols/SymbolsStore';
 import { operationTypes, operationStatus, products } from 'src/config';
 import EntriesList from '../components/EntriesList.vue';
 import EntryForm from '../components/EntryForm.vue';
@@ -274,6 +298,7 @@ import { useQuasar } from 'quasar';
 
 const appStore = useAppStore();
 const operationsStore = useOperationsStore();
+const symbolsStore = useSymbolsStore();
 const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
@@ -293,6 +318,55 @@ const symbolDetailRoute = computed(() => {
 const currentPrice = computed(() => {
   return operation.value?.symbol?.priceHistory?.[0] || null;
 });
+
+const marketSyncEnabled = computed(() => {
+  const symbol = operation.value?.symbol;
+  return !!symbol?.marketCode && !!symbol?.marketProvider;
+});
+const marketSyncHasError = computed(
+  () => operation.value?.symbol?.marketSyncStatus === 'error',
+);
+const marketSyncErrorMessage = computed(
+  () => operation.value?.symbol?.marketSyncError || '',
+);
+
+const handleManualSync = async () => {
+  if (!marketSyncEnabled.value || !operation.value?.symbolId) {
+    $q.notify({
+      type: 'negative',
+      message: 'Market Sync no configurado',
+    });
+    return;
+  }
+
+  try {
+    const result = await symbolsStore.manualMarketSync(operation.value.symbolId);
+    await refreshOperation();
+    $q.notify({
+      type: 'positive',
+      message: result?.skipped
+        ? 'Sin cambios (precio ya registrado)'
+        : 'Sincronizacion completada',
+    });
+  } catch (error) {
+    const status = (error as any)?.response?.status;
+    const responseMessage =
+      (error as any)?.response?.data?.message ||
+      (error as any)?.message ||
+      symbolsStore.error ||
+      '';
+    const notFoundMessage = operation.value?.symbol?.marketCode
+      ? `El código ${operation.value?.symbol?.marketCode} es incorrecto o no se encuentra`
+      : 'El código es incorrecto o no se encuentra';
+    $q.notify({
+      type: 'negative',
+      message:
+        status === 404
+          ? notFoundMessage
+          : responseMessage || 'Error al sincronizar',
+    });
+  }
+};
 
 onMounted(async () => {
   await refreshOperation();

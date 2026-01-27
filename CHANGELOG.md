@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v3.0.3 - 27/01/26
+
+- Arreglar gráfico de portfolio para check diario
+- Modificar ordenación de rendimiento mensual para visualizar bien en mobil
+- Indicador de símbolo auto actualizable
+- Actualizar el market de todos los símbolos configuracos aunque no tengan operaciones abiertas.
+- crypto market fuerza la fecha anterior
+- Nueva posibilidad de actualizar precio por market desde el detalle de la operación
+
+---
+
 ## v3.0.2 - 23/01/26
 
 - Configuración del método para obtener precios de cryptos

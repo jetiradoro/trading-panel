@@ -374,26 +374,16 @@ export class SymbolsService {
   }
 
   /**
-   * Sincroniza precios de simbolos en operaciones abiertas.
+   * Sincroniza precios de simbolos con market configurado.
    */
-  async syncOpenOperationsMarketPrices(): Promise<void> {
-    const openOperations = await this.prisma.operations.findMany({
-      where: { status: 'open' },
-      select: { symbolId: true },
-    });
-
-    const symbolIds = Array.from(
-      new Set(openOperations.map((o) => o.symbolId)),
-    );
-    if (!symbolIds.length) return;
-
+  async syncConfiguredMarketSymbolsPrices(): Promise<void> {
     const symbolsToSync = await this.prisma.symbols.findMany({
       where: {
-        id: { in: symbolIds },
         marketCode: { not: null },
         marketProvider: { not: null },
       },
     });
+    if (!symbolsToSync.length) return;
 
     for (const symbol of symbolsToSync) {
       try {

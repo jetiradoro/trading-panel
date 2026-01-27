@@ -5,7 +5,7 @@ Documentacion tecnica del proceso automatico de actualizacion de precios.
 ## Flujo General
 
 1. Cron diario ejecuta el proceso.
-2. Se obtienen simbolos con operaciones abiertas y `marketCode` + `marketProvider`.
+2. Se obtienen simbolos con `marketCode` + `marketProvider` configurado.
 3. Se consulta el proveedor configurado.
 4. Se inserta `price_history` si el precio/fecha no existe.
 5. Se actualiza `marketSyncStatus`/`marketSyncError` en el simbolo.
@@ -34,11 +34,10 @@ Archivo: `api/src/market-data/market-sync.cron.ts`
 Archivo: `api/src/symbols/symbols.service.ts`
 
 Metodo:
-- `syncOpenOperationsMarketPrices()`
+- `syncConfiguredMarketSymbolsPrices()`
 
 Logica:
-- Busca operaciones abiertas.
-- Filtra simbolos con `marketCode` y `marketProvider`.
+- Busca todos los simbolos con `marketCode` y `marketProvider`.
 - Llama `priceMarketSync(symbolId)`.
 - Si error, actualiza estado y registra en log.
 

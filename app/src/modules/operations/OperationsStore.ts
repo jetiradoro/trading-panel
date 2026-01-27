@@ -59,6 +59,10 @@ interface Operation {
     code: string;
     name: string;
     logo?: string;
+    marketCode?: string;
+    marketProvider?: string;
+    marketSyncStatus?: string;
+    marketSyncError?: string;
     priceHistory?: PriceHistory[];
   };
   entries?: OperationEntry[];

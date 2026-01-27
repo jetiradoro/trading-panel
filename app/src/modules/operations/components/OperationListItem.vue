@@ -22,7 +22,18 @@
         </q-item-section>
 
         <q-item-section>
-          <q-item-label>{{ operation.symbol?.code || 'N/A' }}</q-item-label>
+          <q-item-label class="row items-center no-wrap">
+            <q-icon
+              v-if="marketSyncEnabled"
+              name="fiber_manual_record"
+              color="positive"
+              size="8px"
+              class="q-mr-xs"
+            >
+              <q-tooltip>Market Sync configurado</q-tooltip>
+            </q-icon>
+            <span>{{ operation.symbol?.code || 'N/A' }}</span>
+          </q-item-label>
           <q-item-label caption>{{ operation.symbol?.name || 'N/A' }}</q-item-label>
         </q-item-section>
 
@@ -99,6 +110,8 @@ interface Operation {
     code: string;
     name: string;
     logo?: string;
+    marketCode?: string;
+    marketProvider?: string;
   };
   metrics?: OperationMetrics;
   entries?: OperationEntry[];
@@ -158,6 +171,11 @@ const productIcon = computed(() => {
     default:
       return 'help';
   }
+});
+
+const marketSyncEnabled = computed(() => {
+  const symbol = props.operation.symbol;
+  return !!symbol?.marketCode && !!symbol?.marketProvider;
 });
 
 const firstEntryDate = computed(() => {

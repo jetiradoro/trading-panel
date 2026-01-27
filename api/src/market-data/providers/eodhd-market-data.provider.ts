@@ -201,7 +201,7 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
 
     return {
       price: Number(lastItem.previousClose),
-      date: this.buildCloseDate(lastItem.previousCloseDate),
+      date: this.buildCryptoCloseDate(lastItem.previousCloseDate),
       raw: lastItem,
     };
   }
@@ -242,6 +242,19 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
    */
   private buildCloseDate(dateValue: string): Date {
     return dayjs(dateValue)
+      .hour(23)
+      .minute(0)
+      .second(0)
+      .millisecond(0)
+      .toDate();
+  }
+
+  /**
+   * Crypto: fija la hora a las 23:00 del día anterior a la fecha base.
+   */
+  private buildCryptoCloseDate(dateValue: string): Date {
+    return dayjs(dateValue)
+      .subtract(1, 'day')
       .hour(23)
       .minute(0)
       .second(0)

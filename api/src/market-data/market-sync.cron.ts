@@ -17,7 +17,7 @@ export class MarketSyncCron {
   async handleCron() {
     try {
       await appendLog('cron_exec.log', 'INFO market_sync_cron start');
-      await this.symbolsService.syncOpenOperationsMarketPrices();
+      await this.symbolsService.syncConfiguredMarketSymbolsPrices();
       await appendLog('cron_exec.log', 'INFO market_sync_cron end');
     } catch (error: any) {
       const message = error?.message || 'Unknown cron error';

@@ -513,7 +513,17 @@ export class AnalyticsService {
 
     // Generar puntos por día/semana según periodo
     const interval =
-      period === '7d' ? 1 : period === '30d' ? 1 : period === '90d' ? 7 : 30;
+      period === '7d'
+        ? 1
+        : period === '30d' || period === '1m'
+          ? 1
+          : period === '90d' || period === '3m'
+            ? 1
+            : period === '6m' || period === '1y'
+              ? 7
+              : period === '5y' || period === 'all'
+                ? 30
+                : 30;
     const points: PortfolioPointDto[] = [];
     const now = new Date();
 
@@ -661,7 +671,7 @@ export class AnalyticsService {
       data.operationsClosed++;
     }
 
-    const resultEntries = Array.from(monthsMap.entries()).sort(([a], [b]) =>
+    const resultEntries = Array.from(monthsMap.entries()).sort(([b], [a]) =>
       a.localeCompare(b),
     );
 
@@ -740,7 +750,17 @@ export class AnalyticsService {
       .filter((op) => op.closeDate && (op.closeDate as Date) >= startDate);
 
     const interval =
-      period === '7d' ? 1 : period === '30d' ? 1 : period === '90d' ? 7 : 30;
+      period === '7d'
+        ? 1
+        : period === '30d' || period === '1m'
+          ? 1
+          : period === '90d' || period === '3m'
+            ? 1
+            : period === '6m' || period === '1y'
+              ? 7
+              : period === '5y' || period === 'all'
+                ? 30
+                : 30;
     const points: EquityPointDto[] = [];
     const now = new Date();
     let currentDate = new Date(startDate);

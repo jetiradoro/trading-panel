@@ -24,7 +24,18 @@
       </q-item-section>
 
       <q-item-section>
-        <q-item-label>{{ symbol.code }}</q-item-label>
+        <q-item-label class="row items-center no-wrap">
+          <q-icon
+            v-if="marketSyncEnabled"
+            name="fiber_manual_record"
+            color="positive"
+            size="8px"
+            class="q-mr-xs"
+          >
+            <q-tooltip>Market Sync configurado</q-tooltip>
+          </q-icon>
+          <span>{{ symbol.code }}</span>
+        </q-item-label>
         <q-item-label caption>{{ symbol.name }}</q-item-label>
       </q-item-section>
 
@@ -63,6 +74,8 @@ interface Symbol {
   name: string;
   logo?: string;
   product: string;
+  marketCode?: string;
+  marketProvider?: string;
 }
 
 const props = defineProps<{
@@ -112,6 +125,10 @@ const productIcon = computed(() => {
 
 const pnlClass = computed(() => {
   return props.pnl >= 0 ? 'text-positive' : 'text-negative';
+});
+
+const marketSyncEnabled = computed(() => {
+  return !!props.symbol.marketCode && !!props.symbol.marketProvider;
 });
 </script>
 

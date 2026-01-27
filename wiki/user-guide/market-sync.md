@@ -1,7 +1,7 @@
 # Market Sync - Guia de Usuario
 
 ## Que es Market Sync?
-Sistema automatico que actualiza el precio diario de tus simbolos abiertos.
+Sistema automatico que actualiza el precio diario de tus simbolos con market configurado.
 
 ## Indicadores en el detalle del simbolo
 - **Bolita verde**: sync correcto.
