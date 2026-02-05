@@ -250,7 +250,7 @@ SymbolPerformanceDto[] = [
     code: string;
     name: string;
     logo: string | null;
-    product: 'crypto' | 'stock' | 'etf';
+    product: 'crypto' | 'stock' | 'etf' | 'derivative';
     totalInvested: number;
     realizedPnL: number;
     unrealizedPnL: number;
@@ -306,7 +306,7 @@ Distribución de inversiones por tipo de producto.
 ```typescript
 ProductDistributionDto[] = [
   {
-    product: 'crypto' | 'stock' | 'etf';
+    product: 'crypto' | 'stock' | 'etf' | 'derivative';
     label: string;              // "Criptos", "Acciones", "ETFs"
     totalInvested: number;
     percentage: number;
@@ -554,14 +554,24 @@ availableCash = totalFromTransactions - totalInvested
 Para cada operación abierta:
 
 1. **Obtener cantidad actual:**
-   ```
-   currentQty = Σ(buy_quantity) - Σ(sell_quantity)
-   ```
+   - Long:
+     ```
+     currentQty = Σ(buy_quantity) - Σ(sell_quantity)
+     ```
+   - Short:
+     ```
+     currentQty = Σ(sell_quantity) - Σ(buy_quantity)
+     ```
 
-2. **Calcular precio promedio de compra:**
-   ```
-   avgBuyPrice = Σ(buy_quantity * buy_price) / Σ(buy_quantity)
-   ```
+2. **Calcular precio promedio de entrada:**
+   - Long:
+     ```
+     avgBuyPrice = Σ(buy_quantity * buy_price) / Σ(buy_quantity)
+     ```
+   - Short:
+     ```
+     avgBuyPrice = Σ(sell_quantity * sell_price) / Σ(sell_quantity)
+     ```
 
 3. **Obtener precio actual del símbolo:**
    ```sql
@@ -572,8 +582,10 @@ Para cada operación abierta:
    ```
 
 4. **Calcular P&L según tipo:**
-   - **LONG:** `(currentPrice - avgBuyPrice) * currentQty`
-   - **SHORT:** `(avgBuyPrice - currentPrice) * currentQty`
+  - **LONG:** `(currentPrice - avgBuyPrice) * currentQty`
+  - **SHORT:** `(avgBuyPrice - currentPrice) * currentQty`
+  - **DERIVATIVE:** Se trata como **LONG** aunque `type = short`
+  - Si `product = derivative` y hay `leverage`, el P&L se multiplica por `leverage`
 
 ---
 

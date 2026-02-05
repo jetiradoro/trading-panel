@@ -87,7 +87,8 @@ const infoContent = `
 <ul>
   <li><strong>Criptos</strong> (naranja): Criptomonedas (BTC, ETH, etc.)</li>
   <li><strong>Acciones</strong> (azul): Acciones de empresas</li>
-  <li><strong>ETFs</strong> (verde): Fondos cotizados</li>
+<li><strong>ETFs</strong> (verde): Fondos cotizados</li>
+<li><strong>Derivados</strong> (turquesa): Operaciones con apalancamiento</li>
 </ul>
 <p><strong>¿Cómo leerlo?</strong></p>
 <p>Muestra el porcentaje y valor invertido en cada categoría. Es global (incluye Trading y Planes ETF).</p>
@@ -100,6 +101,7 @@ const productColors: Record<string, string> = {
   crypto: '#F7931A', // Naranja
   stock: '#1976D2', // Azul
   etf: '#388E3C', // Verde
+  derivative: '#009688', // Teal
 };
 
 /**

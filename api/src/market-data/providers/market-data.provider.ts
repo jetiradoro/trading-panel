@@ -1,7 +1,7 @@
 /**
  * Tipos de producto soportados para datos de mercado.
  */
-export type MarketProduct = 'stock' | 'crypto' | 'etf';
+export type MarketProduct = 'stock' | 'crypto' | 'etf' | 'derivative';
 
 /**
  * Resultado estandar de un precio de mercado.

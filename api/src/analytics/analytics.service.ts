@@ -253,27 +253,40 @@ export class AnalyticsService {
       const sellEntries = op.entries.filter((e) => e.entryType === 'sell');
 
       const buyQty = buyEntries.reduce((sum, e) => sum + Number(e.quantity), 0);
-      const sellQty = sellEntries.reduce(
-        (sum, e) => sum + Number(e.quantity),
-        0,
-      );
-      const currentQty = buyQty - sellQty;
+      const sellQty = sellEntries.reduce((sum, e) => sum + Number(e.quantity), 0);
+      const isDerivative = op.product === 'derivative';
+      const isLongLike = isDerivative || op.type === 'long';
+      const netQty = buyQty - sellQty;
+      const currentQty = isDerivative ? Math.abs(netQty) : isLongLike ? netQty : -netQty;
 
       if (currentQty <= 0) continue;
 
-      const buyTotal = buyEntries.reduce(
+      const entryEntries = isDerivative
+        ? netQty >= 0
+          ? buyEntries
+          : sellEntries
+        : isLongLike
+        ? buyEntries
+        : sellEntries;
+      const entryQty = isDerivative ? (netQty >= 0 ? buyQty : sellQty) : isLongLike ? buyQty : sellQty;
+      const entryTotal = entryEntries.reduce(
         (sum, e) => sum + Number(e.quantity) * Number(e.price),
         0,
       );
-      const avgBuyPrice = buyQty > 0 ? buyTotal / buyQty : 0;
+      const avgBuyPrice = entryQty > 0 ? entryTotal / entryQty : 0;
       const currentInvestment = avgBuyPrice * currentQty;
       totalCurrentInvestment += currentInvestment;
 
-      if (op.type === 'long') {
-        unrealizedPnL += (Number(currentPrice) - avgBuyPrice) * currentQty;
-      } else {
-        unrealizedPnL += (avgBuyPrice - Number(currentPrice)) * currentQty;
+      let opUnrealized =
+        isLongLike
+          ? (Number(currentPrice) - avgBuyPrice) * currentQty
+          : (avgBuyPrice - Number(currentPrice)) * currentQty;
+
+      if (isDerivative && op.leverage && op.leverage > 0) {
+        opUnrealized *= op.leverage;
       }
+
+      unrealizedPnL += opUnrealized;
     }
 
     const totalPnL = realizedPnL + unrealizedPnL;
@@ -430,6 +443,7 @@ export class AnalyticsService {
       crypto: 'Criptos',
       stock: 'Acciones',
       etf: 'ETFs',
+      derivative: 'Derivados',
     };
 
     const productsMap = new Map<string, ProductDistributionDto>();

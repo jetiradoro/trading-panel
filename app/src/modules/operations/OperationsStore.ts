@@ -35,6 +35,8 @@ interface OperationMetrics {
   unrealizedPnL: number | null;
   pnlPercentage: number | null;
   currentInvestment: number | null;
+  currentMargin: number | null;
+  pnlPercentageOnMargin: number | null;
   buyQty: number;
   sellQty: number;
 }
@@ -47,9 +49,10 @@ interface Operation {
   accountId: string;
   userId: string;
   symbolId: string;
-  product: string; // 'crypto' | 'stock' | 'etf'
+  product: string; // 'crypto' | 'stock' | 'etf' | 'derivative'
   type: string; // 'long' | 'short'
   status: string; // 'open' | 'closed'
+  leverage?: number | null;
   balance?: number;
   totalFees?: number;
   createdAt: string;
@@ -78,6 +81,7 @@ interface NewOperationDto {
   symbolId: string;
   product: string;
   type: string;
+  leverage?: number | null;
   firstEntry?: {
     entryType: string;
     quantity: number;

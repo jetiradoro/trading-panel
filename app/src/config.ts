@@ -12,6 +12,7 @@ export const products = [
   { code: 'crypto', label: 'Cripto' },
   { code: 'stock', label: 'Acción' },
   { code: 'etf', label: 'ETF' },
+  { code: 'derivative', label: 'Derivado' },
 ];
 
 export const operationTypes = [

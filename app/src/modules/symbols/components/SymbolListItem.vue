@@ -105,6 +105,8 @@ const productColor = computed(() => {
       return 'blue';
     case 'etf':
       return 'purple';
+    case 'derivative':
+      return 'teal';
     default:
       return 'grey';
   }
@@ -118,6 +120,8 @@ const productIcon = computed(() => {
       return 'show_chart';
     case 'etf':
       return 'account_balance';
+    case 'derivative':
+      return 'insights';
     default:
       return 'help';
   }

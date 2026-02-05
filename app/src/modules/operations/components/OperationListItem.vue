@@ -168,6 +168,8 @@ const productIcon = computed(() => {
       return 'show_chart';
     case 'etf':
       return 'account_balance';
+    case 'derivative':
+      return 'insights';
     default:
       return 'help';
   }

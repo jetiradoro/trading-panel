@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOperationDto } from './dto/create-operation.dto';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
@@ -65,6 +65,8 @@ export class OperationsService {
   private async calculateBalance(
     operationId: string,
     operationType: string,
+    product: string,
+    leverage: number | null | undefined,
     tx: any,
   ): Promise<number> {
     const entries = await tx.operation_entries.findMany({
@@ -85,11 +87,12 @@ export class OperationsService {
         0,
       );
 
-    if (operationType === 'long') {
-      return sellTotal - buyTotal;
-    } else {
-      return buyTotal - sellTotal;
+    const isLongLike = product === 'derivative' || operationType === 'long';
+    const baseBalance = isLongLike ? sellTotal - buyTotal : buyTotal - sellTotal;
+    if (product === 'derivative' && leverage && leverage > 0) {
+      return baseBalance * leverage;
     }
+    return baseBalance;
   }
 
   /**
@@ -120,6 +123,8 @@ export class OperationsService {
       const balance = await this.calculateBalance(
         operationId,
         operation.type,
+        operation.product,
+        operation.leverage,
         tx,
       );
       await tx.operations.update({
@@ -135,7 +140,7 @@ export class OperationsService {
    * Crear operación con entrada inicial opcional
    */
   async create(data: CreateOperationDto): Promise<operations> {
-    const { firstEntry, userId, accountId, symbolId, product, type } = data;
+    const { firstEntry, userId, accountId, symbolId, product, type, leverage } = data;
 
     // Asegurar que userId existe
     if (!userId) {
@@ -156,6 +161,10 @@ export class OperationsService {
       throw new NotFoundException('Symbol not found for active account');
     }
 
+    if (product !== 'derivative' && leverage !== undefined && leverage !== null) {
+      throw new BadRequestException('El apalancamiento solo está disponible para derivados');
+    }
+
     // Transacción para crear operación y primera entrada
     return this.prisma.$transaction(async (tx) => {
       const operation = await tx.operations.create({
@@ -165,6 +174,7 @@ export class OperationsService {
           symbolId,
           product,
           type,
+          leverage,
         },
       });
 
@@ -271,13 +281,24 @@ export class OperationsService {
       (sum: number, e: any) => sum + Number(e.quantity),
       0,
     );
-    const currentQty = buyQty - sellQty;
+    const isDerivative = operation.product === 'derivative';
+    const isLongLike = isDerivative || operation.type === 'long';
+    const netQty = buyQty - sellQty;
+    const currentQty = isDerivative ? Math.abs(netQty) : isLongLike ? netQty : -netQty;
 
-    const buyTotal = buyEntries.reduce(
+    const entryEntries = isDerivative
+      ? netQty >= 0
+        ? buyEntries
+        : sellEntries
+      : isLongLike
+      ? buyEntries
+      : sellEntries;
+    const entryQty = isDerivative ? (netQty >= 0 ? buyQty : sellQty) : isLongLike ? buyQty : sellQty;
+    const entryTotal = entryEntries.reduce(
       (sum: number, e: any) => sum + Number(e.quantity) * Number(e.price),
       0,
     );
-    const avgBuyPrice = buyQty > 0 ? buyTotal / buyQty : 0;
+    const avgBuyPrice = entryQty > 0 ? entryTotal / entryQty : 0;
     const totalFees = entries.reduce(
       (sum: number, e: any) => sum + Number(e.tax || 0),
       0,
@@ -286,19 +307,29 @@ export class OperationsService {
     let unrealizedPnL: number | null = null;
     let pnlPercentage: number | null = null;
     let currentInvestment: number | null = null;
+    let currentMargin: number | null = null;
+    let pnlPercentageOnMargin: number | null = null;
 
     if (currentPrice && currentQty > 0) {
       currentInvestment = avgBuyPrice * currentQty;
 
-      if (operation.type === 'long') {
-        unrealizedPnL = (currentPrice - avgBuyPrice) * currentQty - totalFees;
-      } else {
-        unrealizedPnL = (avgBuyPrice - currentPrice) * currentQty - totalFees;
+      const baseUnrealized = isLongLike
+        ? (currentPrice - avgBuyPrice) * currentQty - totalFees
+        : (avgBuyPrice - currentPrice) * currentQty - totalFees;
+      const leverage = operation.product === 'derivative' ? operation.leverage : null;
+      unrealizedPnL =
+        leverage && leverage > 0 ? baseUnrealized * leverage : baseUnrealized;
+
+      // Calcular porcentaje de ganancia/pérdida sobre exposición
+      if (currentInvestment > 0) {
+        pnlPercentage = (baseUnrealized / currentInvestment) * 100;
       }
 
-      // Calcular porcentaje de ganancia/pérdida
-      if (currentInvestment > 0) {
-        pnlPercentage = (unrealizedPnL / currentInvestment) * 100;
+      if (leverage && leverage > 0) {
+        currentMargin = currentInvestment / leverage;
+        if (currentMargin > 0) {
+          pnlPercentageOnMargin = (unrealizedPnL / currentMargin) * 100;
+        }
       }
     }
 
@@ -308,6 +339,8 @@ export class OperationsService {
       unrealizedPnL,
       pnlPercentage,
       currentInvestment,
+      currentMargin,
+      pnlPercentageOnMargin,
       buyQty,
       sellQty,
     };
@@ -383,6 +416,8 @@ export class OperationsService {
         id: true,
         status: true,
         type: true,
+        product: true,
+        leverage: true,
         symbolId: true,
         userId: true,
         accountId: true,
@@ -428,6 +463,8 @@ export class OperationsService {
         const balance = await this.calculateBalance(
           operationId,
           operation.type,
+          operation.product,
+          operation.leverage,
           tx,
         );
 

@@ -69,7 +69,9 @@ export class OperationsController {
     if (!account) {
       throw new HttpException('No active account found', 400);
     }
-    return this.service.findOne(id, user.id, account.id);
+    const rs = await this.service.findOne(id, user.id, account.id);
+    console.log('Operation found:', rs);
+    return rs;
   }
 
   @Patch(':id/status')

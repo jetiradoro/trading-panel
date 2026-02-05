@@ -129,8 +129,29 @@
         >
           <q-card flat bordered class="full-height">
             <q-card-section>
-              <div class="text-caption text-grey">Inversión actual</div>
+              <div class="text-caption text-grey">{{ currentInvestmentLabel }}</div>
               <div class="text-h6">{{ operation.metrics.currentInvestment.toFixed(2) }} €</div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <div
+          class="col-6"
+          v-if="operation.status === 'open' && operation.metrics?.currentMargin"
+        >
+          <q-card flat bordered class="full-height">
+            <q-card-section>
+              <div class="text-caption text-grey">Margen actual</div>
+              <div class="text-h6">{{ operation.metrics.currentMargin.toFixed(2) }} €</div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <div class="col-6" v-if="operation.product === 'derivative'">
+          <q-card flat bordered class="full-height">
+            <q-card-section>
+              <div class="text-caption text-grey">Apalancamiento</div>
+              <div class="text-h6">{{ leverageLabel }}</div>
             </q-card-section>
           </q-card>
         </div>
@@ -414,6 +435,16 @@ const productLabel = computed(() => {
   if (!op) return '';
   const product = products.find((p) => p.code === op.product);
   return product?.label || op.product;
+});
+
+const currentInvestmentLabel = computed(() => {
+  return operation.value?.product === 'derivative' ? 'Exposición actual' : 'Inversión actual';
+});
+
+const leverageLabel = computed(() => {
+  const leverage = operation.value?.leverage;
+  if (!leverage) return 'No definido';
+  return `${leverage.toFixed(2)}x`;
 });
 
 const balanceRowClass = computed(() => {

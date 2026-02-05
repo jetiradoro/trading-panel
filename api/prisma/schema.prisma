@@ -112,6 +112,7 @@ model operations {
   symbolId  String
   product   String
   type      String
+  leverage  Float?
   status    String   @default("open")
   balance   Float?
   createdAt DateTime @default(now())

@@ -19,6 +19,19 @@
         :rules="[(val) => !!val || 'Campo requerido']"
       />
 
+      <q-input
+        v-if="isDerivative"
+        v-model.number="operation.leverage"
+        type="number"
+        label="Apalancamiento"
+        placeholder="Ej: 2"
+        outlined
+        dense
+        class="q-mb-md"
+        suffix="x"
+        :rules="leverageRules"
+      />
+
       <q-separator class="q-my-md" />
 
       <div class="text-h6 q-mb-md">Primera entrada</div>
@@ -111,6 +124,7 @@ const operation = ref({
   symbolId: '',
   product: '',
   type: '',
+  leverage: null as number | null,
 });
 
 const firstEntry = ref({
@@ -130,6 +144,17 @@ const entryTypeOptions = entryTypes.map((e) => ({
   label: e.label,
   value: e.code,
 }));
+
+const isDerivative = computed(() => operation.value.product === 'derivative');
+
+const leverageRules = [
+  (val: number | null) => {
+    if (val === null || val === undefined || val === ('' as unknown as number)) return true;
+    if (Number(val) <= 0) return 'Debe ser mayor que 0';
+    const text = String(val);
+    return /^[0-9]+(\.[0-9]{1,2})?$/.test(text) || 'Máximo 2 decimales';
+  },
+];
 
 const currentAccountId = computed(() => accountStore.currentAccount?.id);
 
@@ -165,13 +190,26 @@ async function save() {
       tax: firstEntry.value.tax ?? 0,
     };
 
-    await operationsStore.createOperation({
+    const requestPayload = {
       accountId: currentAccountId.value,
       symbolId: operation.value.symbolId,
       product: operation.value.product,
       type: operation.value.type,
       firstEntry: payload,
-    });
+    } as {
+      accountId: string;
+      symbolId: string;
+      product: string;
+      type: string;
+      firstEntry: typeof payload;
+      leverage?: number | null;
+    };
+
+    if (isDerivative.value) {
+      requestPayload.leverage = operation.value.leverage ?? null;
+    }
+
+    await operationsStore.createOperation(requestPayload);
 
     $q.notify({
       type: 'positive',

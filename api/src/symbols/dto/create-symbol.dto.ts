@@ -23,6 +23,6 @@ export class CreateSymbolDto {
   logo?: string;
 
   @IsNotEmpty()
-  @IsIn(['crypto', 'stock', 'etf'])
+  @IsIn(['crypto', 'stock', 'etf', 'derivative'])
   product: string;
 }

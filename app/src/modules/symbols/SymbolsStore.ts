@@ -25,7 +25,7 @@ interface Symbol {
   marketSyncError?: string;
   name: string;
   logo?: string;
-  product: string; // 'crypto' | 'stock' | 'etf'
+  product: string; // 'crypto' | 'stock' | 'etf' | 'derivative'
   sortOrder: number;
   createdAt: string;
   updatedAt: string;

@@ -54,6 +54,8 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
           return this.getLatestCryptoPrice(symbolCode);
         case 'etf':
           return this.getLatestEtfPrice(symbolCode, options?.exchange);
+        case 'derivative':
+          return this.getLatestStockPrice(symbolCode, options?.exchange);
         default:
           return this.getLatestStockPrice(symbolCode, options?.exchange);
       }
@@ -215,6 +217,8 @@ export class EodhdMarketDataProvider implements MarketDataProvider {
         return this.cryptoEndpoint;
       case 'etf':
         return this.etfEndpoint;
+      case 'derivative':
+        return this.stockEndpoint;
       default:
         return this.stockEndpoint;
     }

@@ -21,7 +21,7 @@ Tabla principal de operaciones de trading.
 - `accountId` (String, FK) - Cuenta asociada
 - `userId` (String, Indexed) - Usuario propietario
 - `symbolId` (String, FK) - Símbolo/activo
-- `product` (String) - Tipo de producto: `crypto` | `stock` | `etf`
+- `product` (String) - Tipo de producto: `crypto` | `stock` | `etf` | `derivative`
 - `type` (String) - Tipo de operación: `long` | `short`
 - `status` (String) - Estado: `open` | `closed` (default: `open`)
 - `balance` (Float, Nullable) - Balance final (null hasta cerrar)
@@ -86,7 +86,7 @@ Catálogo de símbolos/activos disponibles.
 - `code` (String, Unique) - Código del símbolo (ej: BTC, AAPL)
 - `name` (String) - Nombre completo
 - `logo` (String, Nullable) - URL del logo
-- `product` (String) - Tipo: `crypto` | `stock` | `etf`
+- `product` (String) - Tipo: `crypto` | `stock` | `etf` | `derivative`
 - `createdAt` (DateTime) - Fecha de creación
 - `updatedAt` (DateTime) - Fecha de actualización
 
@@ -108,8 +108,9 @@ Crear nueva operación con entrada inicial opcional.
 {
   accountId: string;      // ID de la cuenta
   symbolId: string;       // ID del símbolo
-  product: 'crypto' | 'stock' | 'etf';
+  product: 'crypto' | 'stock' | 'etf' | 'derivative';
   type: 'long' | 'short';
+  leverage?: number;     // Opcional (solo derivados, máx 2 decimales)
   firstEntry?: {
     entryType: 'buy' | 'sell';
     quantity: number;
@@ -415,13 +416,23 @@ totalFees = Σ(entries.tax)
 ### Cálculos en Tiempo Real (Operaciones Abiertas)
 
 **Cantidad Actual**:
+- Long:
 ```
 currentQty = buyQty - sellQty
 ```
+- Short:
+```
+currentQty = sellQty - buyQty
+```
 
-**Precio Promedio de Compra** (weighted average):
+**Precio Promedio de Entrada** (weighted average):
+- Long:
 ```
 avgBuyPrice = Σ(buy.quantity × buy.price) / Σ(buy.quantity)
+```
+- Short:
+```
+avgBuyPrice = Σ(sell.quantity × sell.price) / Σ(sell.quantity)
 ```
 
 **P&L No Realizado**:
@@ -437,6 +448,19 @@ unrealizedPnL = (avgBuyPrice - currentPrice) × currentQty
 ```
 
 Nota: `currentPrice` se obtiene del último registro en `price_history`. Si no existe, `unrealizedPnL = null`.
+
+**Derivados (short/long)**:
+Para `product = derivative`, el cálculo se trata como **long** independientemente del `type`,
+porque el precio del derivado ya incorpora la inversión del subyacente.
+Si las entradas están invertidas (más ventas que compras), se usa la
+parte dominante para calcular el precio medio de entrada.
+
+**Apalancamiento (Derivados)**:
+- `leverage` opcional (float positivo, 2 decimales)
+- `currentMargin = currentInvestment / leverage`
+- `% P&L sobre margen = unrealizedPnL / currentMargin * 100`
+- Para derivados, el `unrealizedPnL` y el `balance` se multiplican por `leverage`.
+- El `% P&L` sobre exposición se calcula sin apalancamiento (movimiento real del precio).
 
 ---
 
@@ -490,9 +514,10 @@ Nota: `currentPrice` se obtiene del último registro en `price_history`. Si no e
 {
   accountId: string;
   symbolId: string;
-  product: 'crypto' | 'stock' | 'etf';
+  product: 'crypto' | 'stock' | 'etf' | 'derivative';
   type: 'long' | 'short';
   userId: string;  // asignado automáticamente
+  leverage?: number;     // Opcional (solo derivados, máx 2 decimales)
   firstEntry?: CreateEntryDto;
 }
 ```

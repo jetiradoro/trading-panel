@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v3.1.0 - 05/02/26
+
+- Añadir derivados y apalancamiento
+
+---
+
 ## v3.0.3 - 27/01/26
 
 - Arreglar gráfico de portfolio para check diario

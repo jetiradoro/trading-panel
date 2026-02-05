@@ -76,7 +76,7 @@ Una **operación de trading** es un registro que agrupa todas las compras y vent
 2. Haz clic en "Nueva Operación"
 3. Completa el formulario:
    - **Símbolo**: Elige o crea el activo (ej: BTC, ETH, AAPL)
-   - **Producto**: Criptomoneda, Acción o ETF
+   - **Producto**: Criptomoneda, Acción, ETF o Derivado
    - **Tipo**: Long (compra) o Short (venta)
    - **Primera Entrada** (opcional):
      - Tipo: Buy o Sell
