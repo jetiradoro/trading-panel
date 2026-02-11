@@ -585,7 +585,7 @@ Para cada operación abierta:
   - **LONG:** `(currentPrice - avgBuyPrice) * currentQty`
   - **SHORT:** `(avgBuyPrice - currentPrice) * currentQty`
   - **DERIVATIVE:** Se trata como **LONG** aunque `type = short`
-  - Si `product = derivative` y hay `leverage`, el P&L se multiplica por `leverage`
+  - Si `product = derivative`, el P&L no se multiplica por `leverage` (el precio ya lo incluye)
 
 ---
 

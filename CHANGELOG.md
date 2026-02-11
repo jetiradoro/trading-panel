@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v3.1.1 - 11/02/26
+
+- Ajuste de cálculo P&L en derivados (precio ya apalancado)
+
+---
+
 ## v3.1.0 - 05/02/26
 
 - Añadir derivados y apalancamiento

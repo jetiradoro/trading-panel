@@ -88,11 +88,7 @@ export class OperationsService {
       );
 
     const isLongLike = product === 'derivative' || operationType === 'long';
-    const baseBalance = isLongLike ? sellTotal - buyTotal : buyTotal - sellTotal;
-    if (product === 'derivative' && leverage && leverage > 0) {
-      return baseBalance * leverage;
-    }
-    return baseBalance;
+    return isLongLike ? sellTotal - buyTotal : buyTotal - sellTotal;
   }
 
   /**
@@ -317,8 +313,7 @@ export class OperationsService {
         ? (currentPrice - avgBuyPrice) * currentQty - totalFees
         : (avgBuyPrice - currentPrice) * currentQty - totalFees;
       const leverage = operation.product === 'derivative' ? operation.leverage : null;
-      unrealizedPnL =
-        leverage && leverage > 0 ? baseUnrealized * leverage : baseUnrealized;
+      unrealizedPnL = baseUnrealized;
 
       // Calcular porcentaje de ganancia/pérdida sobre exposición
       if (currentInvestment > 0) {

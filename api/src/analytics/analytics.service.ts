@@ -277,15 +277,10 @@ export class AnalyticsService {
       const currentInvestment = avgBuyPrice * currentQty;
       totalCurrentInvestment += currentInvestment;
 
-      let opUnrealized =
+      const opUnrealized =
         isLongLike
           ? (Number(currentPrice) - avgBuyPrice) * currentQty
           : (avgBuyPrice - Number(currentPrice)) * currentQty;
-
-      if (isDerivative && op.leverage && op.leverage > 0) {
-        opUnrealized *= op.leverage;
-      }
-
       unrealizedPnL += opUnrealized;
     }
 

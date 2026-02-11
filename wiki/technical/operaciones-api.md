@@ -459,7 +459,8 @@ parte dominante para calcular el precio medio de entrada.
 - `leverage` opcional (float positivo, 2 decimales)
 - `currentMargin = currentInvestment / leverage`
 - `% P&L sobre margen = unrealizedPnL / currentMargin * 100`
-- Para derivados, el `unrealizedPnL` y el `balance` se multiplican por `leverage`.
+- Para derivados, el precio ya incorpora el apalancamiento, por lo que
+  `unrealizedPnL` y `balance` no se multiplican por `leverage`.
 - El `% P&L` sobre exposición se calcula sin apalancamiento (movimiento real del precio).
 
 ---
