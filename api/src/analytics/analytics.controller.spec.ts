@@ -15,6 +15,7 @@ describe('AnalyticsController', () => {
     getDashboard: jest.fn(),
     getAccountBalance: jest.fn(),
     getPerformance: jest.fn(),
+    getDailyPerformanceHistory: jest.fn(),
     getSymbolsRanking: jest.fn(),
     getProductDistribution: jest.fn(),
     getPortfolioEvolution: jest.fn(),
@@ -205,6 +206,34 @@ describe('AnalyticsController', () => {
         'account-1',
         'etf',
       );
+    });
+  });
+
+  describe('getDailyPerformanceHistory', () => {
+    it('should return daily performance history', async () => {
+      const query = { period: '30d' as const, product: 'trading' as const };
+      const mockHistory = [
+        {
+          date: '2026-06-01',
+          totalPnL: 250,
+          totalPnLPercentage: 8.5,
+          realizedPnL: 100,
+          unrealizedPnL: 150,
+          winRate: 60,
+        },
+      ];
+
+      mockAnalyticsService.getDailyPerformanceHistory.mockResolvedValue(mockHistory);
+
+      const result = await controller.getDailyPerformanceHistory(mockUser, query);
+
+      expect(service.getDailyPerformanceHistory).toHaveBeenCalledWith(
+        mockUser.id,
+        '30d',
+        'account-1',
+        'trading',
+      );
+      expect(result).toEqual(mockHistory);
     });
   });
 

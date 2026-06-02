@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <!-- Rendimiento global y Distribución por producto -->
+    <!-- Rendimiento global e histórico diario -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-4">
         <performance-summary
@@ -62,13 +62,21 @@
         </q-card>
       </div>
 
-      <!-- Distribución por producto -->
       <div class="col-12 col-md-8">
-        <product-distribution-chart
-          :data="productDistribution || []"
+        <daily-performance-chart
+          :data="performanceHistory || []"
           :loading="loadingCharts"
+          :scope-label="scopeLabel"
+          :period-label="periodLabel"
         />
       </div>
+    </div>
+
+    <div class="q-mb-lg">
+      <product-distribution-chart
+        :data="productDistribution || []"
+        :loading="loadingCharts"
+      />
     </div>
 
     <!-- Evolución del portfolio -->
@@ -138,6 +146,7 @@ import { storeToRefs } from 'pinia';
 import AccountBalanceCards from '../components/AccountBalanceCards.vue';
 import OpenInvestmentSummary from '../components/OpenInvestmentSummary.vue';
 import PerformanceSummary from '../components/PerformanceSummary.vue';
+import DailyPerformanceChart from '../components/DailyPerformanceChart.vue';
 import SymbolRankingTable from '../components/SymbolRankingTable.vue';
 import PortfolioEvolutionChart from '../components/PortfolioEvolutionChart.vue';
 import ProductDistributionChart from '../components/ProductDistributionChart.vue';
@@ -156,6 +165,7 @@ const store = useAnalyticsStore();
 const {
   accountBalance,
   performance,
+  performanceHistory,
   symbolsRanking,
   productDistribution,
   portfolioEvolution,

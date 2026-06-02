@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v3.2.0 - 02/06/26
+
+- Nuevo gráfico de rendimiento diario
+
+---
+
+
 ## v3.1.1 - 11/02/26
 
 - Ajuste de cálculo P&L en derivados (precio ya apalancado)

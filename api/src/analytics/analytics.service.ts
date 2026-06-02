@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AccountBalanceDto,
+  DailyPerformancePointDto,
   PerformanceDto,
   SymbolPerformanceDto,
   ProductDistributionDto,
@@ -19,6 +20,20 @@ import {
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly snapshotProducts: Array<'trading' | 'etf'> = [
+    'trading',
+    'etf',
+  ];
+
+  private getMadridDay(date: Date = new Date()): string {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date);
+  }
 
   /**
    * Convierte periodo a fecha de inicio
@@ -66,6 +81,91 @@ export class AnalyticsService {
   private getProductFilter(product?: 'trading' | 'etf') {
     if (!product) return undefined;
     return product === 'etf' ? { product: 'etf' } : { product: { not: 'etf' } };
+  }
+
+  /**
+   * Registra snapshot diario de rendimiento para todas las cuentas activas
+   */
+  async captureDailyPerformanceSnapshot(): Promise<void> {
+    const dailyPerformance = (this.prisma as any).analytics_daily_performance;
+    const snapshotDay = this.getMadridDay();
+    const accounts = await this.prisma.accounts.findMany({
+      where: { active: true },
+      select: { id: true, userId: true },
+    });
+
+    for (const account of accounts) {
+      for (const product of this.snapshotProducts) {
+        const performance = await this.getPerformance(
+          account.userId,
+          'all',
+          account.id,
+          product,
+        );
+
+        await dailyPerformance.upsert({
+          where: {
+            userId_accountId_product_snapshotDay: {
+              userId: account.userId,
+              accountId: account.id,
+              product,
+              snapshotDay,
+            },
+          },
+          update: {
+            totalPnL: performance.totalPnL,
+            totalPnLPercentage: performance.totalPnLPercentage,
+            realizedPnL: performance.realizedPnL,
+            unrealizedPnL: performance.unrealizedPnL,
+            winRate: performance.winRate,
+          },
+          create: {
+            userId: account.userId,
+            accountId: account.id,
+            product,
+            snapshotDay,
+            totalPnL: performance.totalPnL,
+            totalPnLPercentage: performance.totalPnLPercentage,
+            realizedPnL: performance.realizedPnL,
+            unrealizedPnL: performance.unrealizedPnL,
+            winRate: performance.winRate,
+          },
+        });
+      }
+    }
+  }
+
+  /**
+   * Devuelve histórico diario de rendimiento global
+   */
+  async getDailyPerformanceHistory(
+    userId: string,
+    period: string,
+    accountId?: string,
+    product?: 'trading' | 'etf',
+  ): Promise<DailyPerformancePointDto[]> {
+    const dailyPerformance = (this.prisma as any).analytics_daily_performance;
+    const dateFrom = this.getDateFromPeriod(period);
+    const dayFrom = dateFrom ? this.getMadridDay(dateFrom) : null;
+
+    const rows = await dailyPerformance.findMany({
+      where: {
+        userId,
+        ...(accountId && { accountId }),
+        ...(product && { product }),
+        ...(dayFrom && { snapshotDay: { gte: dayFrom } }),
+      },
+      orderBy: { snapshotDay: 'asc' },
+    });
+
+    return rows.map((row) => ({
+      date: row.snapshotDay,
+      totalPnL: row.totalPnL,
+      totalPnLPercentage: row.totalPnLPercentage,
+      realizedPnL: row.realizedPnL,
+      unrealizedPnL: row.unrealizedPnL,
+      winRate: row.winRate,
+    }));
   }
 
   /**

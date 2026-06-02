@@ -4,6 +4,7 @@ import { api } from 'src/boot/axios';
 import { Notify } from 'quasar';
 import type {
   AccountBalanceDto,
+  DailyPerformancePointDto,
   PerformanceDto,
   SymbolPerformanceDto,
   ProductDistributionDto,
@@ -24,14 +25,15 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const period = ref<PeriodType>('all');
   const productScope = ref<ProductScope>('trading');
   const portfolioRange = ref<'7d' | '1m' | '3m' | '6m' | '1y' | '5y' | 'all'>('3m');
-  const accountBalance = ref<AccountBalanceDto | null>(null);
-  const performance = ref<PerformanceDto | null>(null);
+  const accountBalance = ref<AccountBalanceDto>();
+  const performance = ref<PerformanceDto>();
   const symbolsRanking = ref<SymbolPerformanceDto[]>([]);
   const productDistribution = ref<ProductDistributionDto[]>([]);
   const portfolioEvolution = ref<PortfolioPointDto[]>([]);
   const monthlyPerformance = ref<MonthlyPerformanceDto[]>([]);
   const equityCurve = ref<EquityPointDto[]>([]);
-  const riskMetrics = ref<RiskMetricsDto | undefined>(undefined);
+  const riskMetrics = ref<RiskMetricsDto>();
+  const performanceHistory = ref<DailyPerformancePointDto[]>([]);
 
   const loadingBalance = ref(false);
   const loadingPerformance = ref(false);
@@ -229,12 +231,40 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   }
 
   /**
+   * Carga el histórico diario de rendimiento global
+   */
+  async function loadPerformanceHistory() {
+    try {
+      loadingCharts.value = true;
+      error.value = null;
+      const { data } = await api.get<DailyPerformancePointDto[]>(
+        '/analytics/performance-history',
+        {
+          params: { period: period.value, product: productScope.value },
+        },
+      );
+      performanceHistory.value = data;
+    } catch (err) {
+      console.error('Error al cargar histórico de rendimiento:', err);
+      error.value = 'Error al cargar histórico de rendimiento';
+      Notify.create({
+        type: 'negative',
+        message: 'Error al cargar histórico de rendimiento',
+        position: 'top',
+      });
+    } finally {
+      loadingCharts.value = false;
+    }
+  }
+
+  /**
    * Carga todos los datos del dashboard
    */
   async function loadDashboard() {
     await Promise.all([
       loadAccountBalance(),
       loadPerformance(),
+      loadPerformanceHistory(),
       loadSymbolsRanking(),
       loadProductDistribution(),
       loadMonthlyPerformance(),
@@ -249,6 +279,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   async function reloadPeriodData() {
     await Promise.all([
       loadPerformance(),
+      loadPerformanceHistory(),
       loadSymbolsRanking(),
       loadMonthlyPerformance(),
       loadEquityCurve(),
@@ -294,6 +325,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     monthlyPerformance,
     equityCurve,
     riskMetrics,
+    performanceHistory,
     loadingBalance,
     loadingPerformance,
     loadingRanking,

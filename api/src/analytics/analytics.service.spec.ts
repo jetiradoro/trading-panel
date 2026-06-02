@@ -10,6 +10,13 @@ describe('AnalyticsService', () => {
   let prisma: PrismaService;
 
   const mockPrismaService = {
+    accounts: {
+      findMany: jest.fn(),
+    },
+    analytics_daily_performance: {
+      upsert: jest.fn(),
+      findMany: jest.fn(),
+    },
     transactions: {
       aggregate: jest.fn(),
       findMany: jest.fn(),
@@ -381,6 +388,58 @@ describe('AnalyticsService', () => {
       expect(result).toHaveProperty('equityCurve');
       expect(result).toHaveProperty('riskMetrics');
       expect(result).toHaveProperty('lastUpdated');
+    });
+  });
+
+  describe('captureDailyPerformanceSnapshot', () => {
+    it('should upsert daily snapshots for trading and etf', async () => {
+      mockPrismaService.accounts.findMany.mockResolvedValue([
+        { id: 'account-1', userId: 'user-1' },
+      ]);
+
+      mockPrismaService.operations.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      await service.captureDailyPerformanceSnapshot();
+
+      expect(mockPrismaService.analytics_daily_performance.upsert).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('getDailyPerformanceHistory', () => {
+    it('should return mapped history points sorted by date', async () => {
+      mockPrismaService.analytics_daily_performance.findMany.mockResolvedValue([
+        {
+          snapshotDay: '2026-06-01',
+          totalPnL: 100,
+          totalPnLPercentage: 5,
+          realizedPnL: 60,
+          unrealizedPnL: 40,
+          winRate: 55,
+        },
+      ]);
+
+      const result = await service.getDailyPerformanceHistory(
+        'user-1',
+        '30d',
+        'account-1',
+        'trading',
+      );
+
+      expect(mockPrismaService.analytics_daily_performance.findMany).toHaveBeenCalled();
+      expect(result).toEqual([
+        {
+          date: '2026-06-01',
+          totalPnL: 100,
+          totalPnLPercentage: 5,
+          realizedPnL: 60,
+          unrealizedPnL: 40,
+          winRate: 55,
+        },
+      ]);
     });
   });
 

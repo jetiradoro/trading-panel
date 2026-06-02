@@ -54,6 +54,7 @@ model accounts {
   operations   operations[]
   symbols      symbols[]
   priceHistory price_history[]
+  dailyPerformance analytics_daily_performance[]
 
   @@index([userId])
 }
@@ -165,4 +166,24 @@ model price_history {
   @@index([userId])
   @@index([accountId])
   @@index([accountId, date])
+}
+
+model analytics_daily_performance {
+  id                 String   @id @default(cuid())
+  userId             String
+  accountId          String
+  product            String
+  snapshotDay        String   @db.VarChar(10)
+  totalPnL           Float
+  totalPnLPercentage Float
+  realizedPnL        Float
+  unrealizedPnL      Float
+  winRate            Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  account accounts @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, accountId, product, snapshotDay], map: "idx_daily_perf_unique")
+  @@index([userId, accountId, product, snapshotDay], map: "idx_daily_perf_lookup")
 }

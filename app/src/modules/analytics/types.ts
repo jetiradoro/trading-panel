@@ -84,6 +84,15 @@ export interface RiskMetricsDto {
   largestLoss: number;
 }
 
+export interface DailyPerformancePointDto {
+  date: string;
+  totalPnL: number;
+  totalPnLPercentage: number;
+  realizedPnL: number;
+  unrealizedPnL: number;
+  winRate: number;
+}
+
 export interface DashboardResponseDto {
   accountBalance: AccountBalanceDto;
   performance: PerformanceDto;

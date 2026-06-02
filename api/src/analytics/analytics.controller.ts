@@ -44,6 +44,23 @@ export class AnalyticsController {
     return this.service.getPerformance(user.id, query.period || '30d', account.id, query.product);
   }
 
+  @Get('performance-history')
+  async getDailyPerformanceHistory(
+    @AppClient() user: users,
+    @Query() query: AnalyticsQueryDto,
+  ) {
+    const account = await this.accountsService.findCurrentAccount(user.id);
+    if (!account) {
+      throw new HttpException('No active account found', 400);
+    }
+    return this.service.getDailyPerformanceHistory(
+      user.id,
+      query.period || '30d',
+      account.id,
+      query.product,
+    );
+  }
+
   @Get('symbols-ranking')
   async getSymbolsRanking(@AppClient() user: users, @Query() query: AnalyticsQueryDto) {
     const account = await this.accountsService.findCurrentAccount(user.id);

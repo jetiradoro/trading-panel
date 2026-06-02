@@ -84,6 +84,15 @@ export class RiskMetricsDto {
   largestLoss: number;
 }
 
+export class DailyPerformancePointDto {
+  date: string;
+  totalPnL: number;
+  totalPnLPercentage: number;
+  realizedPnL: number;
+  unrealizedPnL: number;
+  winRate: number;
+}
+
 export class DashboardResponseDto {
   accountBalance: AccountBalanceDto;
   performance: PerformanceDto;
